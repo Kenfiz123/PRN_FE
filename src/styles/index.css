@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Cyberpunk Design System */
+/* Enterprise Design System */
+@import './enterprise.css';
+
+/* Legacy Cyberpunk (for compatibility) */
 :root {
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
