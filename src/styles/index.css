@@ -1,9 +1,10 @@
+@import './enterprise.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Enterprise Design System */
-@import './enterprise.css';
 
 /* Legacy Cyberpunk (for compatibility) */
 :root {

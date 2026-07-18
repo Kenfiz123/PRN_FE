@@ -1,12 +1,26 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
+import { hasPermission as userHasPermission, ROLES } from '../auth/permissions';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [clubAccess, setClubAccess] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const loadClubAccess = useCallback(async () => {
+    try {
+      const access = await api.getMyClubAccess();
+      const normalizedAccess = Array.isArray(access) ? access : [];
+      setClubAccess(normalizedAccess);
+      return normalizedAccess;
+    } catch {
+      setClubAccess([]);
+      return [];
+    }
+  }, []);
 
   // Initialize from stored tokens on mount
   useEffect(() => {
@@ -19,17 +33,19 @@ export function AuthProvider({ children }) {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setIsAuthenticated(true);
+          await loadClubAccess();
         } catch (e) {
           // Invalid stored data, clear it
           api.clearTokens();
           localStorage.removeItem('user');
+          setClubAccess([]);
         }
       }
       setLoading(false);
     };
 
     initAuth();
-  }, []);
+  }, [loadClubAccess]);
 
   const login = useCallback(async (username, password) => {
     try {
@@ -49,13 +65,14 @@ export function AuthProvider({ children }) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
+      await loadClubAccess();
 
       return userData;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
     }
-  }, []);
+  }, [loadClubAccess]);
 
   const register = useCallback(async (username, fullName, email, password) => {
     try {
@@ -75,13 +92,14 @@ export function AuthProvider({ children }) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
+      await loadClubAccess();
 
       return userData;
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
     }
-  }, []);
+  }, [loadClubAccess]);
 
   const logout = useCallback(async () => {
     try {
@@ -92,6 +110,7 @@ export function AuthProvider({ children }) {
       api.clearTokens();
       localStorage.removeItem('user');
       setUser(null);
+      setClubAccess([]);
       setIsAuthenticated(false);
     }
   }, []);
@@ -107,16 +126,25 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   const isAdmin = useCallback(() => {
-    return hasRole('ADMIN') || hasRole('SYSTEM_ADMIN') || hasRole('STUDENT_AFFAIRS_ADMIN');
+    return hasRole(ROLES.ADMIN);
   }, [hasRole]);
 
   const isClubManager = useCallback(() => {
-    return hasRole('CLUB_MANAGER');
-  }, [hasRole]);
+    return hasRole(ROLES.CLUB_MANAGER) || clubAccess.some(access => access.isManager);
+  }, [clubAccess, hasRole]);
+
+  const isTreasurer = useCallback(() => {
+    return hasRole(ROLES.TREASURER) || clubAccess.some(access => access.isTreasurer);
+  }, [clubAccess, hasRole]);
+
+  const hasPermission = useCallback((permission) => {
+    return userHasPermission(user, clubAccess, permission);
+  }, [clubAccess, user]);
 
   return (
     <AuthContext.Provider value={{
       user,
+      clubAccess,
       isAuthenticated,
       loading,
       login,
@@ -124,8 +152,11 @@ export function AuthProvider({ children }) {
       logout,
       updateProfile,
       hasRole,
+      hasPermission,
       isAdmin,
       isClubManager,
+      isTreasurer,
+      refreshClubAccess: loadClubAccess,
       api,
     }}>
       {children}
