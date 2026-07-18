@@ -78,7 +78,7 @@ export default function ActivitiesPage() {
             className="cyber-card p-4 text-center"
           >
             <p className={`font-orbitron text-2xl font-bold text-${stat.color}-400`}>{stat.value}</p>
-            <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">{stat.label}</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wider mt-1">{stat.label}</p>
           </motion.div>
         ))}
       </div>
@@ -90,7 +90,7 @@ export default function ActivitiesPage() {
         className="flex flex-col sm:flex-row gap-4"
       >
         <div className="relative flex-1 max-w-md">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -225,25 +225,25 @@ export default function ActivitiesPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-xl bg-white/5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Date</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Date</p>
                 <p className="text-white font-medium">{selectedActivity.date}</p>
               </div>
               <div className="p-4 rounded-xl bg-white/5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Time</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Time</p>
                 <p className="text-white font-medium">{selectedActivity.time}</p>
               </div>
               <div className="p-4 rounded-xl bg-white/5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Attendees</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Attendees</p>
                 <p className="text-cyan-400 font-medium">{selectedActivity.attendees}</p>
               </div>
               <div className="p-4 rounded-xl bg-white/5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Budget</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Budget</p>
                 <p className="text-green-400 font-medium">{selectedActivity.budget}</p>
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-white/5">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Location</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Location</p>
               <p className="text-white">{selectedActivity.location}</p>
             </div>
 

@@ -210,6 +210,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 8px;
   outline: none;
   transition: all 0.3s ease;
+  text-transform: none;
 }
 
 .cyber-input:focus {
@@ -536,6 +537,55 @@ h1, h2, h3, h4, h5, h6 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Typography Hierarchy - Improved Readability */
+.text-label {
+  color: #d1d5db !important;
+}
+
+.text-secondary {
+  color: #9ca3af;
+}
+
+.text-tertiary {
+  color: #6b7280;
+}
+
+.text-bright {
+  color: #f3f4f6;
+}
+
+/* Card internal sections */
+.card-section {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* List separators */
+.list-divider {
+  border-top: 1px solid var(--border-color);
+}
+
+/* Section divider */
+.section-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 1.5rem 0;
+}
+
+/* Item divider */
+.item-divider {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Better label contrast for dark backgrounds */
+.label-bright {
+  color: #d1d5db;
+}
+
+.label-muted {
+  color: #9ca3af;
 }
 
 /* Responsive */

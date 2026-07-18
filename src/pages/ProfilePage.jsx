@@ -84,7 +84,7 @@ export default function ProfilePage() {
 
           <h3 className="font-orbitron text-xl font-bold text-white mb-1">{user?.name || 'Alex Chen'}</h3>
           <p className="text-cyan-400 mb-1">{user?.role || 'Club President'}</p>
-          <p className="text-gray-500 text-sm">{user?.club || 'Robotics Club'}</p>
+          <p className="text-gray-400 text-sm">{user?.club || 'Robotics Club'}</p>
 
           {/* Status */}
           <div className="mt-6 pt-6 border-t border-white/10">
@@ -92,22 +92,22 @@ export default function ProfilePage() {
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <span className="text-sm text-green-400">Online</span>
             </div>
-            <p className="text-xs text-gray-500">Member since {user?.joinDate || 'September 2024'}</p>
+            <p className="text-xs text-gray-400">Member since {user?.joinDate || 'September 2024'}</p>
           </div>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-3 mt-6">
             <div className="p-3 rounded-xl bg-white/5">
               <p className="font-orbitron text-lg font-bold text-cyan-400">24</p>
-              <p className="text-[10px] text-gray-500 uppercase">Reports</p>
+              <p className="text-[10px] text-gray-400 uppercase">Reports</p>
             </div>
             <div className="p-3 rounded-xl bg-white/5">
               <p className="font-orbitron text-lg font-bold text-purple-400">8</p>
-              <p className="text-[10px] text-gray-500 uppercase">Events</p>
+              <p className="text-[10px] text-gray-400 uppercase">Events</p>
             </div>
             <div className="p-3 rounded-xl bg-white/5">
               <p className="font-orbitron text-lg font-bold text-pink-400">156</p>
-              <p className="text-[10px] text-gray-500 uppercase">Members</p>
+              <p className="text-[10px] text-gray-400 uppercase">Members</p>
             </div>
           </div>
         </motion.div>
@@ -225,10 +225,10 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="font-medium text-white">{activity.action}</p>
-                  <p className="text-sm text-gray-500">{activity.device}</p>
+                  <p className="text-sm text-gray-400">{activity.device}</p>
                 </div>
               </div>
-              <span className="text-sm text-gray-500">{activity.date}</span>
+              <span className="text-sm text-gray-400">{activity.date}</span>
             </motion.div>
           ))}
         </div>
@@ -256,7 +256,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="font-medium text-white">Password</p>
-                <p className="text-sm text-gray-500">Last changed 30 days ago</p>
+                <p className="text-sm text-gray-400">Last changed 30 days ago</p>
               </div>
             </div>
             <button className="cyber-btn text-sm">Change Password</button>
@@ -271,7 +271,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="font-medium text-white">Two-Factor Authentication</p>
-                <p className="text-sm text-gray-500">Add an extra layer of security</p>
+                <p className="text-sm text-gray-400">Add an extra layer of security</p>
               </div>
             </div>
             <button className="cyber-btn cyber-btn-secondary text-sm">Enable</button>
@@ -286,7 +286,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="font-medium text-white">Active Sessions</p>
-                <p className="text-sm text-gray-500">Manage your logged-in devices</p>
+                <p className="text-sm text-gray-400">Manage your logged-in devices</p>
               </div>
             </div>
             <button className="cyber-btn text-sm">View All</button>
@@ -310,7 +310,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div>
               <p className="font-medium text-white">Delete Account</p>
-              <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
+              <p className="text-sm text-gray-400">Permanently delete your account and all data</p>
             </div>
           </div>
           <button className="cyber-btn cyber-btn-danger text-sm">Delete Account</button>

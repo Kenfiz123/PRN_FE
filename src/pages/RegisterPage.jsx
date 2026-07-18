@@ -102,20 +102,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cyber-dark flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 grid-pattern opacity-20" />
-
+        <div className="absolute inset-0 grid-pattern" />
         <motion.div
           animate={{ scale: [1, 1.2, 1], x: [0, 30, 0] }}
           transition={{ duration: 12, repeat: Infinity }}
-          className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/15 rounded-full blur-3xl"
+          className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl"
         />
         <motion.div
           animate={{ scale: [1, 1.3, 1], x: [0, -30, 0] }}
           transition={{ duration: 10, repeat: Infinity }}
-          className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/15 rounded-full blur-3xl"
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-3xl"
         />
       </div>
 
@@ -125,30 +124,27 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-lg"
       >
-        {/* Glow */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-25" />
-
-        <div className="relative bg-cyber-darker/90 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+        <div className="cyber-card p-8">
           {/* Header */}
-          <div className="px-8 pt-8 pb-6 text-center border-b border-white/5">
+          <div className="text-center mb-6">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className="relative inline-block mb-4"
             >
-              <div className="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-cyan-500 via-purple-500 to-pink-500 p-1">
-                <div className="w-full h-full rounded-xl bg-cyber-dark flex items-center justify-center">
-                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 p-1">
+                <div className="w-full h-full rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+                  <svg className="w-7 h-7 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                 </div>
               </div>
             </motion.div>
 
-            <h1 className="font-orbitron text-2xl font-bold gradient-text mb-2">
+            <h1 className="text-2xl font-bold gradient-text mb-2">
               Create Account
             </h1>
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Join the ClubReportHub network
             </p>
 
@@ -159,10 +155,11 @@ export default function RegisterPage() {
                   <motion.div
                     initial={false}
                     animate={{
-                      backgroundColor: s <= step ? '#00f5ff' : 'rgba(255,255,255,0.1)',
-                      borderColor: s <= step ? '#00f5ff' : 'rgba(255,255,255,0.2)'
+                      backgroundColor: s <= step ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)',
+                      borderColor: s <= step ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.2)'
                     }}
-                    className="w-8 h-8 rounded-lg border-2 flex items-center justify-center font-orbitron text-xs font-bold transition-all"
+                    className="w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all"
+                    style={{ color: s <= step ? '#000' : 'var(--text-secondary)' }}
                   >
                     {s < step ? (
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,7 +168,10 @@ export default function RegisterPage() {
                     ) : s}
                   </motion.div>
                   {s < 3 && (
-                    <div className={`w-12 h-0.5 mx-1 ${s < step ? 'bg-cyan-500' : 'bg-white/10'}`} />
+                    <div
+                      className="w-12 h-0.5 mx-1"
+                      style={{ background: s < step ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)' }}
+                    />
                   )}
                 </div>
               ))}
@@ -179,7 +179,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Step 1: Personal Info */}
             {step === 1 && (
               <motion.div
@@ -188,35 +188,35 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">Full Name</label>
+                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Alex Chen"
-                    className={`w-full px-4 py-3.5 bg-white/5 border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-all ${errors.name ? 'border-red-500' : 'border-white/10'}`}
+                    className="cyber-input"
                   />
-                  {errors.name && <p className="mt-2 text-xs text-red-400">{errors.name}</p>}
+                  {errors.name && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.name}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">Email Address</label>
+                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Email Address</label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="alex@university.edu"
-                    className={`w-full px-4 py-3.5 bg-white/5 border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-all ${errors.email ? 'border-red-500' : 'border-white/10'}`}
+                    className="cyber-input"
                   />
-                  {errors.email && <p className="mt-2 text-xs text-red-400">{errors.email}</p>}
+                  {errors.email && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.email}</p>}
                 </div>
 
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="w-full py-4 font-orbitron font-bold text-white rounded-xl bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:opacity-90 transition-opacity"
+                  className="cyber-btn cyber-btn-primary w-full py-3"
                 >
                   Continue
                 </button>
@@ -231,43 +231,43 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">Password</label>
+                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Password</label>
                   <input
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Min. 8 characters"
-                    className={`w-full px-4 py-3.5 bg-white/5 border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-all ${errors.password ? 'border-red-500' : 'border-white/10'}`}
+                    className="cyber-input"
                   />
-                  {errors.password && <p className="mt-2 text-xs text-red-400">{errors.password}</p>}
+                  {errors.password && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.password}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">Confirm Password</label>
+                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Confirm Password</label>
                   <input
                     type="password"
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Re-enter your password"
-                    className={`w-full px-4 py-3.5 bg-white/5 border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-all ${errors.confirmPassword ? 'border-red-500' : 'border-white/10'}`}
+                    className="cyber-input"
                   />
-                  {errors.confirmPassword && <p className="mt-2 text-xs text-red-400">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.confirmPassword}</p>}
                 </div>
 
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="flex-1 py-4 font-orbitron font-bold text-white rounded-xl border border-white/20 hover:bg-white/5 transition-colors"
+                    className="cyber-btn flex-1 py-3"
                   >
                     Back
                   </button>
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="flex-1 py-4 font-orbitron font-bold text-white rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 transition-opacity"
+                    className="cyber-btn cyber-btn-primary flex-1 py-3"
                   >
                     Continue
                   </button>
@@ -283,42 +283,42 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">Select Your Club</label>
+                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Select Your Club</label>
                   <select
                     name="club"
                     value={formData.club}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-cyan-500/50 transition-all ${errors.club ? 'border-red-500' : 'border-white/10'}`}
+                    className="cyber-input"
                   >
-                    <option value="" className="bg-cyber-dark">Choose a club...</option>
+                    <option value="">Choose a club...</option>
                     {clubs.map((club) => (
-                      <option key={club} value={club} className="bg-cyber-dark">{club}</option>
+                      <option key={club} value={club}>{club}</option>
                     ))}
                   </select>
-                  {errors.club && <p className="mt-2 text-xs text-red-400">{errors.club}</p>}
+                  {errors.club && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.club}</p>}
                 </div>
 
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="flex-1 py-4 font-orbitron font-bold text-white rounded-xl border border-white/20 hover:bg-white/5 transition-colors"
+                    className="cyber-btn flex-1 py-3"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 py-4 font-orbitron font-bold text-white rounded-xl bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="cyber-btn cyber-btn-primary flex-1 py-3"
                   >
                     {isLoading ? (
-                      <>
+                      <span className="flex items-center justify-center gap-2">
                         <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                         Creating...
-                      </>
+                      </span>
                     ) : 'Create Account'}
                   </button>
                 </div>
@@ -327,10 +327,13 @@ export default function RegisterPage() {
           </form>
 
           {/* Footer */}
-          <div className="px-8 pb-8 text-center border-t border-white/5 pt-6">
-            <p className="text-sm text-gray-500">
+          <div
+            className="mt-6 pt-6 text-center"
+            style={{ borderTop: '1px solid var(--border-color)' }}
+          >
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Already have an account?{' '}
-              <Link to="/login" className="text-cyan-500 hover:text-cyan-400 font-medium transition-colors">
+              <Link to="/login" className="font-medium" style={{ color: 'var(--neon-cyan)' }}>
                 Sign In
               </Link>
             </p>

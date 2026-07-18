@@ -45,38 +45,57 @@ export default function DashboardPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-8"
+      className="space-y-6"
     >
-      {/* Welcome Section */}
-      <motion.div variants={itemVariants} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div>
-          <h1 className="text-2xl lg:text-[1.75rem] font-semibold text-neutral-900 mb-1">
-            Welcome back, <span className="text-primary-600">{user?.name?.split(' ')[0] || 'User'}</span>
-          </h1>
-          <p className="text-sm text-neutral-500">Here's what's happening in your club network today.</p>
-        </div>
+      {/* Welcome Section - Dark themed header */}
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')] opacity-30" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
 
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center -space-x-2">
-            {['SM', 'JW', 'EC', 'MB', 'LP'].map((avatar, i) => (
-              <div
-                key={i}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-xs font-semibold text-white border-2 border-white"
-                style={{ zIndex: 5 - i }}
-              >
-                {avatar}
+        <div className="relative p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-medium border border-cyan-500/30">
+                  Dashboard
+                </span>
+                <span className="text-gray-500 text-sm">/ Overview</span>
               </div>
-            ))}
-          </div>
-          <div className="text-right pl-4 border-l border-neutral-200">
-            <p className="text-sm font-medium text-neutral-900">24 Online</p>
-            <p className="text-xs text-neutral-500">3 pending approvals</p>
+              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
+                Welcome back, <span className="text-cyan-400">{user?.name?.split(' ')[0] || 'User'}</span>
+              </h1>
+              <p className="text-gray-400 text-base max-w-xl">
+                Here's what's happening in your club network today. Stay updated with all activities.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 px-5 py-3 bg-black/30 rounded-xl border border-white/10 backdrop-blur">
+                <div className="flex items-center -space-x-2">
+                  {['SM', 'JW', 'EC', 'MB', 'LP'].map((avatar, i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white border-2 border-slate-800"
+                      style={{ zIndex: 5 - i }}
+                    >
+                      {avatar}
+                    </div>
+                  ))}
+                </div>
+                <div className="h-8 w-px bg-white/10" />
+                <div className="text-right">
+                  <p className="text-white font-bold">24 <span className="text-gray-400 font-normal">Online</span></p>
+                  <p className="text-amber-400 text-xs font-medium">3 pending</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Reports"
           value="1,247"
@@ -84,11 +103,6 @@ export default function DashboardPage() {
           changeType="positive"
           color="primary"
           delay={0}
-          icon={
-            <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          }
         />
         <StatCard
           title="Active Clubs"
@@ -97,11 +111,6 @@ export default function DashboardPage() {
           changeType="positive"
           color="success"
           delay={0.1}
-          icon={
-            <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0M7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          }
         />
         <StatCard
           title="Total Budget"
@@ -110,11 +119,6 @@ export default function DashboardPage() {
           changeType="positive"
           color="warning"
           delay={0.2}
-          icon={
-            <svg className="w-5 h-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
         />
         <StatCard
           title="Activities"
@@ -123,48 +127,51 @@ export default function DashboardPage() {
           changeType="negative"
           color="error"
           delay={0.3}
-          icon={
-            <svg className="w-5 h-5 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
         />
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
+        {/* Recent Activity - Dark card */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <div className="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
+          <div className="cyber-card">
+            <div className="flex items-center justify-between pb-4 mb-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-primary-500 rounded-full" />
-                <h2 className="text-base font-semibold text-neutral-900">Recent Activity</h2>
+                <div className="w-1 h-6 bg-gradient-to-b from-cyan-400 to-purple-400 rounded-full" />
+                <h2 className="text-lg font-bold text-white">Recent Activity</h2>
               </div>
-              <button className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">View All</button>
+              <button className="text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
+                View All
+              </button>
             </div>
 
-            <div className="space-y-3">
-              {recentActivities.map((activity) => (
+            <div className="space-y-1">
+              {recentActivities.map((activity, index) => (
                 <div
                   key={activity.id}
-                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition-all group"
+                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-all group cursor-pointer"
+                  style={{ borderBottom: index < recentActivities.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${
-                    activity.type === 'report' ? 'bg-primary-50 text-primary-600' :
-                    activity.type === 'finance' ? 'bg-warning-light text-warning' :
-                    activity.type === 'club' ? 'bg-purple-100 text-purple-600' :
-                    'bg-success-light text-success'
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    activity.type === 'report' ? 'bg-cyan-500/20 text-cyan-400' :
+                    activity.type === 'finance' ? 'bg-amber-500/20 text-amber-400' :
+                    activity.type === 'club' ? 'bg-purple-500/20 text-purple-400' :
+                    'bg-emerald-500/20 text-emerald-400'
                   }`}>
                     {activity.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-neutral-700">
-                      <span className="font-medium text-neutral-900">{activity.user}</span>
-                      {' '}{activity.action}{' '}
-                      <span className="text-primary-600 font-medium">{activity.target}</span>
+                    <p className="text-white font-medium">
+                      {activity.user}
+                      <span className="text-gray-400 font-normal"> {activity.action} </span>
+                      <span className="text-cyan-400 font-medium">{activity.target}</span>
                     </p>
-                    <p className="text-xs text-neutral-400 mt-0.5">{activity.time}</p>
+                    <p className="text-gray-500 text-sm mt-1">{activity.time}</p>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
               ))}
@@ -172,50 +179,50 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Quick Stats & Upcoming */}
-        <motion.div variants={itemVariants} className="space-y-6">
+        {/* Quick Stats & Upcoming - Sidebar */}
+        <motion.div variants={itemVariants} className="space-y-4">
           {/* Quick Stats */}
-          <div className="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-1 h-6 bg-purple-500 rounded-full" />
-              <h2 className="text-base font-semibold text-neutral-900">Quick Stats</h2>
+          <div className="cyber-card">
+            <div className="flex items-center gap-3 pb-4 mb-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <div className="w-1 h-6 bg-gradient-to-b from-purple-400 to-pink-400 rounded-full" />
+              <h2 className="text-lg font-bold text-white">Quick Stats</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {quickStats.map((stat) => (
                 <div
                   key={stat.label}
-                  className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 text-center group hover:border-primary-200 hover:bg-primary-50/30 transition-all"
+                  className="p-4 rounded-xl bg-white/5 border border-white/10 text-center group hover:border-cyan-500/30 hover:bg-white/10 transition-all cursor-pointer"
                 >
-                  <p className="text-2xl font-bold text-neutral-900">{stat.value}</p>
-                  <p className="text-xs text-neutral-500 mt-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+                  <p className="text-gray-500 text-xs mt-1 font-medium uppercase tracking-wide">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Upcoming Events */}
-          <div className="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-1 h-6 bg-success rounded-full" />
-              <h2 className="text-base font-semibold text-neutral-900">Upcoming Events</h2>
+          <div className="cyber-card">
+            <div className="flex items-center gap-3 pb-4 mb-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <div className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full" />
+              <h2 className="text-lg font-bold text-white">Upcoming Events</h2>
             </div>
             <div className="space-y-3">
               {upcomingEvents.map((event) => (
                 <div
                   key={event.name}
-                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition-all group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
                 >
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-50 border border-neutral-200 flex flex-col items-center justify-center">
-                    <span className="text-[10px] text-neutral-500 font-medium uppercase">{event.date.split(' ')[0]}</span>
-                    <span className="text-lg font-bold text-neutral-900">{event.date.split(' ')[1]}</span>
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] text-gray-400 uppercase font-bold">{event.date.split(' ')[0]}</span>
+                    <span className="text-lg font-bold text-white">{event.date.split(' ')[1]}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-900 truncate">{event.name}</p>
-                    <p className="text-xs text-neutral-500">{event.club}</p>
+                    <p className="text-white font-medium text-sm truncate">{event.name}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{event.club}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-primary-600">{event.attendees}</p>
-                    <p className="text-[10px] text-neutral-400 uppercase">Attendees</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-cyan-400 font-bold">{event.attendees}</p>
+                    <p className="text-gray-500 text-[10px] uppercase"> attendees</p>
                   </div>
                 </div>
               ))}
@@ -227,18 +234,20 @@ export default function DashboardPage() {
       {/* Charts Section */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Report Trends */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="cyber-card">
+          <div className="flex items-center justify-between pb-4 mb-6" style={{ borderBottom: '1px solid var(--border-color)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-primary-500 rounded-full" />
-              <h2 className="text-base font-semibold text-neutral-900">Report Trends</h2>
+              <div className="w-1 h-6 bg-gradient-to-b from-cyan-400 to-blue-400 rounded-full" />
+              <h2 className="text-lg font-bold text-white">Report Trends</h2>
             </div>
-            <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg">
+            <div className="flex gap-1 bg-white/5 p-1 rounded-lg">
               {['Week', 'Month', 'Year'].map((period, i) => (
                 <button
                   key={period}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    i === 1 ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
+                    i === 1
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   {period}
@@ -247,21 +256,21 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* CSS Chart */}
-          <div className="h-48 flex items-end justify-between gap-2 px-2">
+          {/* Chart */}
+          <div className="h-48 flex items-end justify-between gap-2">
             {[65, 45, 78, 52, 88, 67, 92, 73, 85, 60, 76, 95].map((value, i) => (
               <div key={i} className="flex-1 group relative">
                 <div
-                  className="w-full rounded-t-md bg-gradient-to-t from-primary-500 to-primary-400 transition-all"
+                  className="w-full rounded-t-md bg-gradient-to-t from-cyan-500 to-cyan-400 transition-all group-hover:from-cyan-400 group-hover:to-cyan-300"
                   style={{ height: `${value}%` }}
                 />
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-neutral-900 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/80 text-cyan-400 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-cyan-500/30">
                   {value}%
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex justify-between mt-4 text-xs text-neutral-400 px-2">
+          <div className="flex justify-between mt-4 text-xs text-gray-500 font-medium px-2">
             <span>Jan</span>
             <span>Feb</span>
             <span>Mar</span>
@@ -278,44 +287,60 @@ export default function DashboardPage() {
         </div>
 
         {/* Budget Allocation */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-warning rounded-full" />
-              <h2 className="text-base font-semibold text-neutral-900">Budget Allocation</h2>
-            </div>
+        <div className="cyber-card">
+          <div className="flex items-center gap-3 pb-4 mb-6" style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-400 rounded-full" />
+            <h2 className="text-lg font-bold text-white">Budget Allocation</h2>
           </div>
 
-          {/* Donut Chart */}
           <div className="flex items-center gap-8">
+            {/* Donut Chart */}
             <div className="relative w-36 h-36 flex-shrink-0">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-neutral-100)" strokeWidth="12" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-primary-500)" strokeWidth="12" strokeDasharray="75.4 251.2" strokeDashoffset="0" strokeLinecap="round" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-success)" strokeWidth="12" strokeDasharray="62.8 251.2" strokeDashoffset="-75.4" strokeLinecap="round" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-warning)" strokeWidth="12" strokeDasharray="50.3 251.2" strokeDashoffset="-138.2" strokeLinecap="round" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--color-info)" strokeWidth="12" strokeDasharray="62.8 251.2" strokeDashoffset="-188.5" strokeLinecap="round" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="12" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient1)" strokeWidth="12" strokeDasharray="75.4 251.2" strokeDashoffset="0" strokeLinecap="round" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient2)" strokeWidth="12" strokeDasharray="62.8 251.2" strokeDashoffset="-75.4" strokeLinecap="round" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient3)" strokeWidth="12" strokeDasharray="50.3 251.2" strokeDashoffset="-138.2" strokeLinecap="round" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient4)" strokeWidth="12" strokeDasharray="62.8 251.2" strokeDashoffset="-188.5" strokeLinecap="round" />
+                <defs>
+                  <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </linearGradient>
+                  <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="100%" stopColor="#34d399" />
+                  </linearGradient>
+                  <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#fbbf24" />
+                  </linearGradient>
+                  <linearGradient id="gradient4" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#a78bfa" />
+                  </linearGradient>
+                </defs>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-neutral-900">$45.2K</span>
-                <span className="text-xs text-neutral-500">Total</span>
+                <span className="text-2xl font-bold text-white">$45.2K</span>
+                <span className="text-xs text-gray-500">Total</span>
               </div>
             </div>
 
             {/* Legend */}
             <div className="flex-1 space-y-3">
               {[
-                { name: 'Events', value: '30%', color: 'primary' },
-                { name: 'Equipment', value: '25%', color: 'success' },
-                { name: 'Marketing', value: '20%', color: 'warning' },
-                { name: 'Operations', value: '25%', color: 'info' }
+                { name: 'Events', value: '30%', color: 'cyan' },
+                { name: 'Equipment', value: '25%', color: 'emerald' },
+                { name: 'Marketing', value: '20%', color: 'amber' },
+                { name: 'Operations', value: '25%', color: 'violet' }
               ].map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
+                <div key={item.name} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-sm bg-${item.color}-500`} />
-                    <span className="text-sm text-neutral-600">{item.name}</span>
+                    <span className="text-gray-300 text-sm font-medium">{item.name}</span>
                   </div>
-                  <span className={`text-sm font-semibold text-${item.color}-600`}>{item.value}</span>
+                  <span className={`text-${item.color}-400 text-sm font-bold`}>{item.value}</span>
                 </div>
               ))}
             </div>

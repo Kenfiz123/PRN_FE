@@ -17,9 +17,23 @@ const clubsData = [
 ]
 
 const categories = ['All', 'Technology', 'Arts', 'Academic', 'Sports', 'Social']
-const statusColors = {
-  active: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/50', dot: 'bg-green-400' },
-  inactive: { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/50', dot: 'bg-gray-400' }
+const colorMap = {
+  cyan: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/50' },
+  purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/50' },
+  pink: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/50' },
+  green: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/50' },
+  yellow: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/50' },
+  gray: { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/50' }
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
 }
 
 export default function ClubsPage() {
@@ -57,20 +71,27 @@ export default function ClubsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-      >
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="font-orbitron text-2xl font-bold text-white">Clubs Management</h2>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium border border-purple-500/30">
+              Clubs
+            </span>
+            <span className="text-gray-500 text-sm">/ Management</span>
+          </div>
+          <h2 className="text-3xl font-bold text-white">Clubs Management</h2>
           <p className="text-gray-400 text-sm mt-1">Manage and monitor all registered clubs</p>
         </div>
         <button
           onClick={handleAddClub}
-          className="cyber-btn cyber-btn-primary flex items-center gap-2"
+          className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-cyan-500/30 transition-all"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -80,12 +101,7 @@ export default function ClubsPage() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col lg:flex-row gap-4"
-      >
-        {/* Search */}
+      <motion.div variants={itemVariants} className="flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1">
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -95,11 +111,10 @@ export default function ClubsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search clubs..."
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-all"
+            className="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
           />
         </div>
 
-        {/* Category Filter */}
         <div className="flex gap-2 flex-wrap">
           {categories.map((category) => (
             <button
@@ -108,7 +123,7 @@ export default function ClubsPage() {
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 selectedCategory === category
                   ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                  : 'bg-white/5 text-gray-400 border border-white/10 hover:border-white/20'
+                  : 'bg-slate-800 text-gray-400 border border-slate-700 hover:border-slate-600 hover:text-white'
               }`}
             >
               {category}
@@ -116,11 +131,10 @@ export default function ClubsPage() {
           ))}
         </div>
 
-        {/* Sort */}
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-300 focus:outline-none focus:border-cyan-500/50"
+          className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
         >
           <option value="name">Sort by Name</option>
           <option value="members">Sort by Members</option>
@@ -129,101 +143,98 @@ export default function ClubsPage() {
       </motion.div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Clubs', value: clubs.length, color: 'cyan' },
-          { label: 'Active Clubs', value: clubs.filter(c => c.status === 'active').length, color: 'green' },
-          { label: 'Total Members', value: clubs.reduce((acc, c) => acc + c.members, 0), color: 'purple' },
-          { label: 'Total Reports', value: clubs.reduce((acc, c) => acc + c.reports, 0), color: 'pink' }
-        ].map((stat, i) => (
-          <motion.div
+          { label: 'Total Clubs', value: clubs.length, gradient: 'from-cyan-500/20 to-cyan-500/5', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+          { label: 'Active Clubs', value: clubs.filter(c => c.status === 'active').length, gradient: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+          { label: 'Total Members', value: clubs.reduce((acc, c) => acc + c.members, 0), gradient: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', border: 'border-purple-500/30' },
+          { label: 'Total Reports', value: clubs.reduce((acc, c) => acc + c.reports, 0), gradient: 'from-pink-500/20 to-pink-500/5', text: 'text-pink-400', border: 'border-pink-500/30' }
+        ].map((stat) => (
+          <div
             key={stat.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
-            className={`cyber-card text-center p-4 border-${stat.color}-500/30`}
+            className={`p-4 rounded-xl bg-gradient-to-br ${stat.gradient} border ${stat.border} backdrop-blur`}
           >
-            <p className={`font-orbitron text-2xl font-bold text-${stat.color}-400`}>{stat.value}</p>
-            <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">{stat.label}</p>
-          </motion.div>
+            <p className={`text-3xl font-bold ${stat.text}`}>{stat.value}</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wider mt-1 font-medium">{stat.label}</p>
+          </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Clubs Grid */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        variants={containerVariants}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
       >
         <AnimatePresence mode="popLayout">
-          {filteredClubs.map((club, index) => (
-            <motion.div
-              key={club.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ y: -5 }}
-              className="cyber-card group cursor-pointer"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-${club.color}-500/30 to-${club.color}-500/10 border border-${club.color}-500/30 flex items-center justify-center`}>
-                    <span className="font-orbitron font-bold text-white">{club.name[0]}</span>
+          {filteredClubs.map((club, index) => {
+            const colors = colorMap[club.color]
+            return (
+              <motion.div
+                key={club.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, delay: index * 0.04 }}
+                whileHover={{ y: -4 }}
+                className="group bg-slate-900/60 backdrop-blur rounded-xl border border-slate-800 overflow-hidden hover:border-cyan-500/50 transition-all"
+              >
+                {/* Card Header */}
+                <div className="relative p-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border ${colors.border} flex items-center justify-center`}>
+                      <span className={`text-2xl font-bold ${colors.text}`}>{club.name[0]}</span>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${club.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'}`}>
+                      {club.status === 'active' ? '● Active' : '○ Inactive'}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors">{club.name}</h3>
-                    <p className="text-xs text-gray-500">{club.category}</p>
+                  <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">{club.name}</h3>
+                  <p className="text-gray-500 text-xs mt-1 uppercase tracking-wider font-medium">{club.category}</p>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 p-5 pt-4">
+                  <div className="p-3 rounded-lg bg-white/5">
+                    <p className="text-2xl font-bold text-white">{club.members}</p>
+                    <p className="text-xs text-gray-400 uppercase font-medium mt-0.5">Members</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-cyan-500/10">
+                    <p className="text-2xl font-bold text-cyan-400">{club.reports}</p>
+                    <p className="text-xs text-cyan-400/70 uppercase font-medium mt-0.5">Reports</p>
                   </div>
                 </div>
-                <span className={`cyber-badge cyber-badge-${club.status === 'active' ? 'green' : 'purple'}`}>
-                  {club.status}
-                </span>
-              </div>
 
-              {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="p-3 rounded-lg bg-white/5">
-                  <p className="text-lg font-bold text-white">{club.members}</p>
-                  <p className="text-xs text-gray-500">Members</p>
+                {/* Details */}
+                <div className="px-5 pb-4 space-y-2 text-sm">
+                  <div className="flex items-center justify-between py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span className="text-gray-500 text-xs uppercase tracking-wider font-medium">President</span>
+                    <span className="text-white font-medium">{club.president}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span className="text-gray-500 text-xs uppercase tracking-wider font-medium">Budget</span>
+                    <span className="text-emerald-400 font-bold">{club.budget}</span>
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-white/5">
-                  <p className="text-lg font-bold text-cyan-400">{club.reports}</p>
-                  <p className="text-xs text-gray-500">Reports</p>
-                </div>
-              </div>
 
-              {/* Details */}
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">President</span>
-                  <span className="text-white">{club.president}</span>
+                {/* Actions */}
+                <div className="flex gap-2 p-4 bg-black/30" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <button
+                    onClick={() => handleEditClub(club)}
+                    className="flex-1 py-2 px-3 rounded-lg text-xs font-medium bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-all"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClub(club.id)}
+                    className="flex-1 py-2 px-3 rounded-lg text-xs font-medium bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all"
+                  >
+                    Delete
+                  </button>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Budget</span>
-                  <span className="text-green-400 font-medium">{club.budget}</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
-                <button
-                  onClick={() => handleEditClub(club)}
-                  className="flex-1 py-2 px-3 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteClub(club.id)}
-                  className="py-2 px-3 rounded-lg text-xs font-medium bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 transition-all"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )
+          })}
         </AnimatePresence>
       </motion.div>
 
@@ -235,7 +246,7 @@ export default function ClubsPage() {
           className="text-center py-16"
         >
           <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0M7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
           <p className="text-gray-500">No clubs found matching your criteria</p>
         </motion.div>
@@ -249,27 +260,17 @@ export default function ClubsPage() {
       >
         <form className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Club Name</label>
-            <input
-              type="text"
-              defaultValue={editingClub?.name || ''}
-              className="cyber-input"
-              placeholder="Enter club name"
-            />
+            <label className="block text-sm text-gray-400 mb-2 uppercase tracking-wider font-medium">Club Name</label>
+            <input type="text" defaultValue={editingClub?.name || ''} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="Enter club name" />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-2">President</label>
-            <input
-              type="text"
-              defaultValue={editingClub?.president || ''}
-              className="cyber-input"
-              placeholder="Enter president name"
-            />
+            <label className="block text-sm text-gray-400 mb-2 uppercase tracking-wider font-medium">President</label>
+            <input type="text" defaultValue={editingClub?.president || ''} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="Enter president name" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Category</label>
-              <select className="cyber-input">
+              <label className="block text-sm text-gray-400 mb-2 uppercase tracking-wider font-medium">Category</label>
+              <select className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500">
                 <option value="Technology">Technology</option>
                 <option value="Arts">Arts</option>
                 <option value="Academic">Academic</option>
@@ -278,36 +279,25 @@ export default function ClubsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-2">Budget</label>
-              <input
-                type="text"
-                defaultValue={editingClub?.budget || ''}
-                className="cyber-input"
-                placeholder="$0,000"
-              />
+              <label className="block text-sm text-gray-400 mb-2 uppercase tracking-wider font-medium">Budget</label>
+              <input type="text" defaultValue={editingClub?.budget || ''} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="$0,000" />
             </div>
           </div>
           <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="flex-1 cyber-btn cyber-btn-secondary"
-            >
-              Cancel
-            </button>
+            <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-xl bg-slate-800 text-white font-medium hover:bg-slate-700">Cancel</button>
             <button
               type="button"
               onClick={() => {
                 success(editingClub ? 'Club updated successfully' : 'Club added successfully')
                 setShowModal(false)
               }}
-              className="flex-1 cyber-btn cyber-btn-primary"
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/30"
             >
               {editingClub ? 'Update' : 'Create'} Club
             </button>
           </div>
         </form>
       </Modal>
-    </div>
+    </motion.div>
   )
 }

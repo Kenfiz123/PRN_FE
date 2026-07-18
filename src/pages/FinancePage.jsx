@@ -84,7 +84,7 @@ export default function FinancePage() {
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="px-2 py-1 rounded bg-green-500/20 text-green-400">+12.5%</span>
-              <span className="text-gray-500">vs last month</span>
+              <span className="text-gray-400">vs last month</span>
             </div>
           </div>
         </motion.div>
@@ -110,7 +110,7 @@ export default function FinancePage() {
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="px-2 py-1 rounded bg-red-500/20 text-red-400">+5.2%</span>
-              <span className="text-gray-500">vs last month</span>
+              <span className="text-gray-400">vs last month</span>
             </div>
           </div>
         </motion.div>
@@ -136,7 +136,7 @@ export default function FinancePage() {
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-400">Healthy</span>
-              <span className="text-gray-500">Financial status</span>
+              <span className="text-gray-400">Financial status</span>
             </div>
           </div>
         </motion.div>
@@ -166,7 +166,7 @@ export default function FinancePage() {
                   <span className="text-sm text-gray-300">{item.name}</span>
                   <span className="text-sm font-medium">
                     <span className={`text-${item.color}-400`}>${item.spent.toLocaleString()}</span>
-                    <span className="text-gray-500"> / ${item.allocated.toLocaleString()}</span>
+                    <span className="text-gray-400"> / ${item.allocated.toLocaleString()}</span>
                   </span>
                 </div>
                 <div className="h-3 bg-white/5 rounded-full overflow-hidden">
@@ -183,7 +183,7 @@ export default function FinancePage() {
                     }`}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{percentage.toFixed(0)}% utilized</p>
+                <p className="text-xs text-gray-400 mt-1">{percentage.toFixed(0)}% utilized</p>
               </div>
             )
           })}
@@ -197,7 +197,7 @@ export default function FinancePage() {
         className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
       >
         <div className="relative flex-1 max-w-md">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -305,7 +305,7 @@ export default function FinancePage() {
 
         {filteredTransactions.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-gray-500">No transactions found</p>
+            <p className="text-gray-400">No transactions found</p>
           </div>
         )}
       </motion.div>
