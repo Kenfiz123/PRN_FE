@@ -2,11 +2,13 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { X } from 'lucide-react'
+import { PERMISSIONS } from '../auth/permissions'
 
 const navItems = [
   {
     path: '/dashboard',
     name: 'Dashboard',
+    permission: PERMISSIONS.VIEW_DASHBOARD,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -16,6 +18,7 @@ const navItems = [
   {
     path: '/clubs',
     name: 'Clubs',
+    permission: PERMISSIONS.VIEW_CLUBS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0M7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -25,6 +28,7 @@ const navItems = [
   {
     path: '/reports',
     name: 'Reports',
+    permission: PERMISSIONS.VIEW_REPORTS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -34,6 +38,7 @@ const navItems = [
   {
     path: '/activities',
     name: 'Activities',
+    permission: PERMISSIONS.VIEW_ACTIVITIES,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -43,6 +48,7 @@ const navItems = [
   {
     path: '/finance',
     name: 'Finance',
+    permission: PERMISSIONS.VIEW_FINANCE,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -52,6 +58,7 @@ const navItems = [
   {
     path: '/notifications',
     name: 'Notifications',
+    permission: PERMISSIONS.VIEW_NOTIFICATIONS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -62,9 +69,20 @@ const navItems = [
   {
     path: '/profile',
     name: 'Profile',
+    permission: PERMISSIONS.VIEW_PROFILE,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    )
+  },
+  {
+    path: '/users',
+    name: 'Users',
+    permission: PERMISSIONS.MANAGE_USERS,
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
     )
   }
@@ -72,7 +90,8 @@ const navItems = [
 
 export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
   const location = useLocation()
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
+  const visibleNavItems = navItems.filter(item => hasPermission(item.permission))
 
   return (
     <aside className={`fixed inset-y-0 left-0 z-50 w-[250px] transform transition-transform duration-300 vanguard-sidebar flex flex-col ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -102,7 +121,7 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3.5 overflow-y-auto space-y-1 flex flex-col pb-4">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -146,7 +165,7 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
           </div>
           <div className="flex-1 min-w-0">
             <strong className="block text-[11px] font-semibold text-[#f8faff]/90 truncate">{user?.name || 'Guest User'}</strong>
-            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.role || 'Visitor'}</small>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.roles?.join(', ') || 'Visitor'}</small>
           </div>
           <button
             onClick={logout}

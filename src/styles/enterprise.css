@@ -390,7 +390,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 3rem 1.5rem;
-  text-center;
+  text-align: center;
 }
 
 .empty-state-icon {

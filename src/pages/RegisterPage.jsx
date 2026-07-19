@@ -4,19 +4,6 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
-const clubs = [
-  'Robotics Club',
-  'Photography Club',
-  'Debate Society',
-  'Music Ensemble',
-  'Drama Club',
-  'Coding Club',
-  'Chess Club',
-  'Environmental Club',
-  'Literary Society',
-  'Sports Club'
-]
-
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { register } = useAuth()
@@ -26,8 +13,7 @@ export default function RegisterPage() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    club: ''
+    confirmPassword: ''
   })
   const [errors, setErrors] = useState({})
   const [step, setStep] = useState(1)
@@ -59,16 +45,19 @@ export default function RegisterPage() {
         newErrors.password = 'Password is required'
       } else if (formData.password.length < 8) {
         newErrors.password = 'Password must be at least 8 characters'
+      } else if (
+        !/[A-Z]/.test(formData.password)
+        || !/[a-z]/.test(formData.password)
+        || !/\d/.test(formData.password)
+        || !/[^A-Za-z0-9]/.test(formData.password)
+      ) {
+        newErrors.password = 'Password must include uppercase, lowercase, number, and special character'
       }
       if (!formData.confirmPassword) {
         newErrors.confirmPassword = 'Please confirm your password'
       } else if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match'
       }
-    }
-
-    if (currentStep === 3 && !formData.club) {
-      newErrors.club = 'Please select a club'
     }
 
     setErrors(newErrors)
@@ -87,15 +76,15 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!validateStep(3)) return
+    if (!validateStep(2)) return
 
     setIsLoading(true)
     try {
-      await register(formData.name, formData.email, formData.password, formData.club)
-      success('Account created successfully! Welcome to ClubReportHub.')
-      navigate('/dashboard')
+      await register(formData.email, formData.name, formData.email, formData.password)
+      success('Account created. Choose a club and submit your membership request.')
+      navigate('/clubs')
     } catch (err) {
-      error('Registration failed. Please try again.')
+      error(err.message || 'Registration failed. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -150,7 +139,7 @@ export default function RegisterPage() {
 
             {/* Progress Steps */}
             <div className="flex items-center justify-center gap-2 mt-6">
-              {[1, 2, 3].map((s) => (
+              {[1, 2].map((s) => (
                 <div key={s} className="flex items-center">
                   <motion.div
                     initial={false}
@@ -167,7 +156,7 @@ export default function RegisterPage() {
                       </svg>
                     ) : s}
                   </motion.div>
-                  {s < 3 && (
+                  {s < 2 && (
                     <div
                       className="w-12 h-0.5 mx-1"
                       style={{ background: s < step ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)' }}
@@ -256,47 +245,9 @@ export default function RegisterPage() {
                   {errors.confirmPassword && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.confirmPassword}</p>}
                 </div>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="cyber-btn flex-1 py-3"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="cyber-btn cyber-btn-primary flex-1 py-3"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 3: Club Selection */}
-            {step === 3 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-5"
-              >
-                <div>
-                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Select Your Club</label>
-                  <select
-                    name="club"
-                    value={formData.club}
-                    onChange={handleChange}
-                    className="cyber-input"
-                  >
-                    <option value="">Choose a club...</option>
-                    {clubs.map((club) => (
-                      <option key={club} value={club}>{club}</option>
-                    ))}
-                  </select>
-                  {errors.club && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.club}</p>}
-                </div>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Your account will not belong to any club yet. After signing in, choose a club and submit a membership request for its owner to review.
+                </p>
 
                 <div className="flex gap-3">
                   <button

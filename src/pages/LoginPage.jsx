@@ -11,8 +11,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    rememberMe: false
+    password: ''
   })
   const [errors, setErrors] = useState({})
 
@@ -28,9 +27,7 @@ export default function LoginPage() {
   const validate = () => {
     const newErrors = {}
     if (!formData.email) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Invalid email format'
+      newErrors.email = 'Email or username is required'
     }
     if (!formData.password) {
       newErrors.password = 'Password is required'
@@ -49,7 +46,7 @@ export default function LoginPage() {
       success('Welcome back to ClubReportHub!')
       navigate('/dashboard')
     } catch (err) {
-      error('Invalid credentials. Please try again.')
+      error(err.message || 'Invalid credentials. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +130,7 @@ export default function LoginPage() {
               transition={{ delay: 0.4 }}
             >
               <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                Email Address
+                Email or Username
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none" style={{ color: 'var(--text-muted)' }}>
@@ -142,7 +139,7 @@ export default function LoginPage() {
                   </svg>
                 </span>
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
@@ -214,31 +211,6 @@ export default function LoginPage() {
               {errors.password && (
                 <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.password}</p>
               )}
-            </motion.div>
-
-            {/* Remember & Forgot */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flex items-center justify-between"
-            >
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleChange}
-                  className="w-4 h-4 rounded"
-                  style={{ accentColor: 'var(--neon-cyan)' }}
-                />
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Remember me
-                </span>
-              </label>
-              <a href="#" className="text-sm" style={{ color: 'var(--neon-cyan)' }}>
-                Forgot password?
-              </a>
             </motion.div>
 
             {/* Submit Button */}

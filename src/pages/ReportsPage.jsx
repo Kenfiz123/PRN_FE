@@ -1,433 +1,305 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import Modal from '../components/Modal'
+import { api } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { PERMISSIONS } from '../auth/permissions'
 
-const reportsData = [
-  { id: 1, title: 'Q4 Event Summary Report', club: 'Robotics Club', author: 'Alex Chen', date: '2024-12-10', status: 'approved', type: 'quarterly', priority: 'high' },
-  { id: 2, title: 'Budget Allocation Proposal', club: 'Photography Club', author: 'Sarah Miller', date: '2024-12-09', status: 'pending', type: 'financial', priority: 'high' },
-  { id: 3, title: 'Winter Concert Planning', club: 'Music Ensemble', author: 'Emily Chen', date: '2024-12-08', status: 'review', type: 'event', priority: 'medium' },
-  { id: 4, title: 'Equipment Purchase Request', club: 'Coding Club', author: 'Lisa Park', date: '2024-12-07', status: 'approved', type: 'procurement', priority: 'low' },
-  { id: 5, title: 'Annual Club Performance', club: 'Debate Society', author: 'James Wilson', date: '2024-12-06', status: 'pending', type: 'annual', priority: 'high' },
-  { id: 6, title: 'New Member Registration', club: 'Drama Club', author: 'Michael Brown', date: '2024-12-05', status: 'approved', type: 'membership', priority: 'low' },
-  { id: 7, title: 'Community Outreach Summary', club: 'Environmental Club', author: 'Emma Johnson', date: '2024-12-04', status: 'review', type: 'social', priority: 'medium' },
-  { id: 8, title: 'Tech Symposium Budget', club: 'Coding Club', author: 'Lisa Park', date: '2024-12-03', status: 'pending', type: 'financial', priority: 'high' },
-  { id: 9, title: 'Sports Day Report', club: 'Sports Club', author: 'Lucas Garcia', date: '2024-12-02', status: 'approved', type: 'event', priority: 'medium' },
-  { id: 10, title: 'Equipment Maintenance Log', club: 'Robotics Club', author: 'Alex Chen', date: '2024-12-01', status: 'approved', type: 'maintenance', priority: 'low' }
-]
-
-const statusConfig = {
-  approved: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', dot: 'bg-emerald-400', label: 'Approved' },
-  pending: { bg: 'bg-amber-500/15', text: 'text-amber-400', dot: 'bg-amber-400', label: 'Pending' },
-  review: { bg: 'bg-cyan-500/15', text: 'text-cyan-400', dot: 'bg-cyan-400', label: 'In Review' },
-  rejected: { bg: 'bg-rose-500/15', text: 'text-rose-400', dot: 'bg-rose-400', label: 'Rejected' }
+const emptyForm = {
+  clubId: '',
+  period: '',
+  reportType: 'ACTIVITY',
+  tag: 'ACTIVITY',
+  dueDate: '',
+  activityName: '',
+  activityDate: '',
+  description: '',
+  participantCount: 0,
+  outcome: '',
 }
 
-const priorityConfig = {
-  high: { color: 'text-rose-400', bg: 'bg-rose-500/15', border: 'border-rose-500/30' },
-  medium: { color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30' },
-  low: { color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30' }
+function normalizeStatus(status) {
+  return status?.toUpperCase().replace(/\s+/g, '_') || 'DRAFT'
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.04 } }
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
+function statusClass(status) {
+  const value = normalizeStatus(status)
+  if (value === 'APPROVED') return 'bg-emerald-500/15 text-emerald-300'
+  if (value === 'REJECTED') return 'bg-rose-500/15 text-rose-300'
+  if (value === 'UNDER_REVIEW') return 'bg-purple-500/15 text-purple-300'
+  if (value === 'SUBMITTED') return 'bg-cyan-500/15 text-cyan-300'
+  return 'bg-amber-500/15 text-amber-300'
 }
 
 export default function ReportsPage() {
+  const { user, clubAccess, hasPermission } = useAuth()
   const { success, error } = useToast()
-  const [reports, setReports] = useState(reportsData)
-  const [selectedStatus, setSelectedStatus] = useState('all')
+  const managedClubs = clubAccess.filter(access => access.isManager)
+  const managedClubIds = useMemo(() => new Set(managedClubs.map(access => access.clubId)), [managedClubs])
+  const canFinalReview = hasPermission(PERMISSIONS.REVIEW_REPORTS)
+
+  const [reports, setReports] = useState([])
+  const [summary, setSummary] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [busyId, setBusyId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [viewingReport, setViewingReport] = useState(null)
-  const [selectedReports, setSelectedReports] = useState([])
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [selectedReport, setSelectedReport] = useState(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [formData, setFormData] = useState(emptyForm)
+  const [reviewTarget, setReviewTarget] = useState(null)
+  const [reviewAction, setReviewAction] = useState('approve')
+  const [feedback, setFeedback] = useState('')
 
-  const filteredReports = reports
-    .filter(report => selectedStatus === 'all' || report.status === selectedStatus)
-    .filter(report => report.title.toLowerCase().includes(searchQuery.toLowerCase()) || report.club.toLowerCase().includes(searchQuery.toLowerCase()))
+  const loadReports = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const [listResult, summaryResult] = await Promise.all([
+        api.getReports({ page: 1, pageSize: 100 }),
+        api.getReportSummary(),
+      ])
+      setReports(Array.isArray(listResult?.items) ? listResult.items : [])
+      setSummary(summaryResult || null)
+    } catch (err) {
+      error(err.message || 'Không thể tải báo cáo.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [error])
 
-  const handleApprove = (reportId) => {
-    setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'approved' } : r))
-    success('Report approved successfully')
+  useEffect(() => {
+    loadReports()
+  }, [loadReports])
+
+  const filteredReports = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    return reports.filter(report => {
+      const matchesQuery = !query
+        || report.clubName.toLowerCase().includes(query)
+        || report.period.toLowerCase().includes(query)
+        || report.reportType.toLowerCase().includes(query)
+      const matchesStatus = statusFilter === 'ALL' || normalizeStatus(report.status) === statusFilter
+      return matchesQuery && matchesStatus
+    })
+  }, [reports, searchQuery, statusFilter])
+
+  const replaceReport = (updated) => {
+    setReports(current => current.map(report => report.id === updated.id ? updated : report))
+    setSelectedReport(current => current?.id === updated.id ? updated : current)
   }
 
-  const handleReject = (reportId) => {
-    setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'rejected' } : r))
-    error('Report rejected')
+  const submitReport = async (report) => {
+    if (busyId) return
+    setBusyId(report.id)
+    try {
+      replaceReport(await api.submitReport(report.id))
+      success('Đã gửi báo cáo để xét duyệt.')
+      await loadReports()
+    } catch (err) {
+      error(err.message || 'Không thể gửi báo cáo.')
+    } finally {
+      setBusyId(null)
+    }
   }
 
-  const handleBulkAction = (action) => {
-    if (selectedReports.length === 0) return
-    setReports(prev => prev.map(r =>
-      selectedReports.includes(r.id) ? { ...r, status: action === 'approve' ? 'approved' : 'rejected' } : r
-    ))
-    success(`${selectedReports.length} reports ${action}d successfully`)
-    setSelectedReports([])
+  const createReport = async (event) => {
+    event.preventDefault()
+    if (busyId) return
+    const club = managedClubs.find(item => item.clubId === Number(formData.clubId))
+    if (!club || !formData.period.trim() || !formData.dueDate || !formData.activityName.trim() || !formData.activityDate) {
+      error('Vui lòng nhập đầy đủ CLB, kỳ báo cáo, hạn nộp và hoạt động.')
+      return
+    }
+
+    setBusyId('create')
+    try {
+      const created = await api.createReport({
+        clubId: club.clubId,
+        clubName: club.clubName,
+        period: formData.period.trim(),
+        reportType: formData.reportType,
+        tag: formData.tag,
+        dueDate: formData.dueDate,
+        details: [{
+          id: null,
+          activityName: formData.activityName.trim(),
+          activityDate: formData.activityDate,
+          description: formData.description.trim(),
+          participantCount: Number(formData.participantCount) || 0,
+          outcome: formData.outcome.trim(),
+        }],
+      })
+      setReports(current => [created, ...current])
+      setShowCreate(false)
+      setFormData(emptyForm)
+      success('Đã tạo bản nháp báo cáo.')
+      await loadReports()
+    } catch (err) {
+      error(err.message || 'Không thể tạo báo cáo.')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const openReview = (report, action) => {
+    setReviewTarget(report)
+    setReviewAction(action)
+    setFeedback('')
+  }
+
+  const submitReview = async (event) => {
+    event.preventDefault()
+    if (busyId || !reviewTarget) return
+    if (reviewAction === 'reject' && !feedback.trim()) {
+      error('Vui lòng nhập lý do từ chối.')
+      return
+    }
+
+    setBusyId(reviewTarget.id)
+    try {
+      let updated
+      if (reviewAction === 'forward') updated = await api.reviewReport(reviewTarget.id, feedback.trim())
+      if (reviewAction === 'approve') updated = await api.approveReport(reviewTarget.id, feedback.trim())
+      if (reviewAction === 'reject') updated = await api.rejectReport(reviewTarget.id, feedback.trim())
+      replaceReport(updated)
+      setReviewTarget(null)
+      setFeedback('')
+      success(reviewAction === 'approve' ? 'Đã phê duyệt báo cáo.' : reviewAction === 'forward' ? 'Đã chuyển báo cáo lên phê duyệt cuối.' : 'Đã từ chối báo cáo.')
+      await loadReports()
+    } catch (err) {
+      error(err.message || 'Không thể xét duyệt báo cáo.')
+    } finally {
+      setBusyId(null)
+    }
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
-      {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium border border-amber-500/30">
-              Reports
-            </span>
-            <span className="text-gray-500 text-sm">/ Management</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white">Reports Management</h1>
-          <p className="text-gray-400 text-sm mt-1">Review and manage club reports</p>
+          <h2 className="text-2xl font-bold text-white">Báo cáo</h2>
+          <p className="mt-1 text-sm text-gray-400">Dữ liệu và thao tác được đồng bộ trực tiếp với Report Service.</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium flex items-center gap-2 hover:shadow-lg hover:shadow-cyan-500/30 transition-all"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Create Report
-        </button>
-      </motion.div>
+        {managedClubs.length > 0 && (
+          <button type="button" onClick={() => setShowCreate(true)} className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 font-semibold text-white">
+            Tạo báo cáo
+          </button>
+        )}
+      </div>
 
-      {/* Filters & Actions */}
-      <motion.div variants={itemVariants} className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
-          <div className="relative flex-1 max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search reports..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-            />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[
+          ['Tổng báo cáo', summary?.total ?? reports.length, 'text-cyan-300'],
+          ['Bản nháp', summary?.draft ?? 0, 'text-amber-300'],
+          ['Đang xét duyệt', (summary?.submitted ?? 0) + (summary?.underReview ?? 0), 'text-purple-300'],
+          ['Đã duyệt', summary?.approved ?? 0, 'text-emerald-300'],
+        ].map(([label, value, color]) => (
+          <div key={label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p className={`text-3xl font-bold ${color}`}>{value}</p>
+            <p className="mt-1 text-xs uppercase tracking-wider text-gray-500">{label}</p>
           </div>
+        ))}
+      </div>
 
-          <div className="flex gap-1.5 bg-slate-800/50 p-1 rounded-lg border border-slate-700">
-            {['all', 'pending', 'review', 'approved', 'rejected'].map((status) => (
-              <button
-                key={status}
-                onClick={() => setSelectedStatus(status)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  selectedStatus === status
-                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {status === 'all' ? 'All' : status === 'review' ? 'In Review' : status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Tìm CLB, kỳ hoặc loại báo cáo..." className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-500" />
+        <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white">
+          <option value="ALL">Tất cả trạng thái</option>
+          <option value="DRAFT">Bản nháp</option>
+          <option value="SUBMITTED">Đã gửi</option>
+          <option value="UNDER_REVIEW">Đang xét duyệt</option>
+          <option value="APPROVED">Đã duyệt</option>
+          <option value="REJECTED">Bị từ chối</option>
+        </select>
+      </div>
 
-        <AnimatePresence>
-          {selectedReports.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-800 border border-cyan-500/30"
-            >
-              <span className="text-sm text-cyan-400 font-medium">{selectedReports.length} selected</span>
-              <button
-                onClick={() => handleBulkAction('approve')}
-                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-colors"
-              >
-                Approve All
-              </button>
-              <button
-                onClick={() => handleBulkAction('reject')}
-                className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-400 text-sm font-medium hover:bg-rose-500/30 transition-colors"
-              >
-                Reject All
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      {isLoading ? (
+        <div className="flex min-h-64 items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-cyan-400" /></div>
+      ) : filteredReports.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">Chưa có báo cáo phù hợp.</div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
+          <div className="overflow-x-auto">
+            <table className="min-w-[820px] w-full">
+              <thead className="border-b border-slate-800 bg-slate-950/50 text-left text-xs uppercase tracking-wider text-gray-500">
+                <tr><th className="px-5 py-4">CLB / Kỳ</th><th className="px-5 py-4">Loại</th><th className="px-5 py-4">Hạn nộp</th><th className="px-5 py-4">Trạng thái</th><th className="px-5 py-4 text-right">Thao tác</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {filteredReports.map((report, index) => {
+                  const status = normalizeStatus(report.status)
+                  const isCreator = report.createdByUserId === user?.id
+                  const canManagerReview = managedClubIds.has(report.clubId) && status === 'SUBMITTED' && !isCreator
+                  const canSubmit = isCreator && (status === 'DRAFT' || status === 'REJECTED')
+                  const canFinalAction = canFinalReview && status === 'UNDER_REVIEW'
 
-      {/* Reports Table */}
-      <motion.div variants={itemVariants} className="bg-slate-900/60 backdrop-blur rounded-xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-900/80" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <th className="px-5 py-4 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedReports.length === filteredReports.length && filteredReports.length > 0}
-                    onChange={(e) => setSelectedReports(e.target.checked ? filteredReports.map(r => r.id) : [])}
-                    className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
-                  />
-                </th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Report</th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Club</th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Author</th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Priority</th>
-                <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence mode="popLayout">
-                {filteredReports.map((report, index) => (
-                  <motion.tr
-                    key={report.id}
-                    layout
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2, delay: index * 0.03 }}
-                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
-                    className="hover:bg-white/5 transition-all group"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
-                  >
-                    <td className="px-5 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedReports.includes(report.id)}
-                        onChange={(e) => setSelectedReports(prev =>
-                          e.target.checked ? [...prev, report.id] : prev.filter(id => id !== report.id)
-                        )}
-                        className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
-                      />
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-semibold text-white group-hover:text-cyan-400 transition-colors">{report.title}</p>
-                      <p className="text-xs text-gray-500 capitalize mt-0.5 uppercase tracking-wider">{report.type.replace('-', ' ')}</p>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-gray-300">{report.club}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white">
-                          {report.author.split(' ').map(n => n[0]).join('')}
+                  return (
+                    <motion.tr key={report.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }} className="hover:bg-white/[0.02]">
+                      <td className="px-5 py-4"><p className="font-semibold text-white">{report.clubName}</p><p className="mt-1 text-xs text-gray-500">{report.period}</p></td>
+                      <td className="px-5 py-4 text-sm text-gray-300">{report.reportType}<p className="text-xs text-gray-500">{report.tag}</p></td>
+                      <td className="px-5 py-4 text-sm text-gray-300">{report.dueDate}</td>
+                      <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(status)}`}>{report.status}</span></td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => setSelectedReport(report)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-gray-300">Xem</button>
+                          {canSubmit && <button type="button" onClick={() => submitReport(report)} disabled={busyId === report.id} className="rounded-lg bg-cyan-500/15 px-3 py-2 text-xs font-semibold text-cyan-300 disabled:opacity-50">Gửi duyệt</button>}
+                          {canManagerReview && <button type="button" onClick={() => openReview(report, 'forward')} className="rounded-lg bg-purple-500/15 px-3 py-2 text-xs font-semibold text-purple-300">Chuyển duyệt</button>}
+                          {(canManagerReview || canFinalAction) && <button type="button" onClick={() => openReview(report, 'reject')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-xs font-semibold text-rose-300">Từ chối</button>}
+                          {canFinalAction && <button type="button" onClick={() => openReview(report, 'approve')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300">Phê duyệt</button>}
                         </div>
-                        <span className="text-sm text-gray-300">{report.author}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-gray-400">{report.date}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[report.status].bg} ${statusConfig[report.status].text}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[report.status].dot}`} />
-                        {statusConfig[report.status].label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize border ${priorityConfig[report.priority].bg} ${priorityConfig[report.priority].color} ${priorityConfig[report.priority].border}`}>
-                        {report.priority}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => setViewingReport(report)}
-                          className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-all"
-                          title="View"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </button>
-                        {report.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(report.id)}
-                              className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
-                              title="Approve"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleReject(report.id)}
-                              className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all"
-                              title="Reject"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
-
-        {filteredReports.length === 0 && (
-          <div className="text-center py-16">
-            <svg className="w-12 h-12 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="text-gray-500 text-sm">No reports found</p>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between px-5 py-4 bg-slate-900/80" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-sm text-gray-400">Showing <span className="text-white font-medium">{filteredReports.length}</span> of <span className="text-white font-medium">{reports.length}</span> reports</p>
-          <div className="flex items-center gap-1">
-            <button className="px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">Previous</button>
-            <button className="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm font-medium border border-cyan-500/30">1</button>
-            <button className="px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white">2</button>
-            <button className="px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white">3</button>
-            <button className="px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white">Next</button>
+                      </td>
+                    </motion.tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
-      </motion.div>
+      )}
 
-      {/* View Report Modal */}
-      <Modal
-        isOpen={!!viewingReport}
-        onClose={() => setViewingReport(null)}
-        title="Report Details"
-        size="lg"
-      >
-        {viewingReport && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">{viewingReport.title}</h3>
-              <div className="flex items-center gap-3 text-sm text-gray-400">
-                <span>{viewingReport.club}</span>
-                <span className="text-gray-700">|</span>
-                <span>By {viewingReport.author}</span>
-                <span className="text-gray-700">|</span>
-                <span>{viewingReport.date}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-slate-800 border border-slate-700">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">Status</p>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[viewingReport.status].bg} ${statusConfig[viewingReport.status].text}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[viewingReport.status].dot}`} />
-                  {statusConfig[viewingReport.status].label}
-                </span>
-              </div>
-              <div className="p-4 rounded-xl bg-slate-800 border border-slate-700">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">Type</p>
-                <p className="text-sm font-semibold text-white capitalize">{viewingReport.type.replace('-', ' ')}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-slate-800 border border-slate-700">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">Priority</p>
-                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold capitalize border ${priorityConfig[viewingReport.priority].bg} ${priorityConfig[viewingReport.priority].color} ${priorityConfig[viewingReport.priority].border}`}>
-                  {viewingReport.priority}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-xl bg-slate-800 border border-slate-700">
-              <h4 className="text-sm font-semibold text-white mb-3 uppercase tracking-wider">Report Content</h4>
-              <p className="text-sm text-gray-300 leading-relaxed">
-                This is a detailed report covering all aspects of {viewingReport.title.toLowerCase()}.
-                The report includes comprehensive analysis, data visualizations, and actionable recommendations
-                for the {viewingReport.club}. All figures have been verified and approved by the respective department heads.
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setViewingReport(null)}
-                className="flex-1 px-4 py-3 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-700 transition-colors"
-              >
-                Close
-              </button>
-              {viewingReport.status === 'pending' && (
-                <>
-                  <button
-                    onClick={() => { handleReject(viewingReport.id); setViewingReport(null) }}
-                    className="px-6 py-3 bg-rose-500/20 text-rose-400 text-sm font-medium rounded-xl hover:bg-rose-500/30 transition-colors border border-rose-500/30"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => { handleApprove(viewingReport.id); setViewingReport(null) }}
-                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:shadow-cyan-500/30 transition-all"
-                  >
-                    Approve
-                  </button>
-                </>
-              )}
-            </div>
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Tạo báo cáo" size="lg">
+        <form onSubmit={createReport} className="space-y-4">
+          <select value={formData.clubId} onChange={event => setFormData(current => ({ ...current, clubId: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900">
+            <option value="">Chọn CLB bạn quản lý</option>
+            {managedClubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}
+          </select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input value={formData.period} onChange={event => setFormData(current => ({ ...current, period: event.target.value }))} required placeholder="Kỳ báo cáo, ví dụ 2026-Q3" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+            <input type="date" value={formData.dueDate} onChange={event => setFormData(current => ({ ...current, dueDate: event.target.value }))} required className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+            <input value={formData.reportType} onChange={event => setFormData(current => ({ ...current, reportType: event.target.value }))} required placeholder="Loại báo cáo" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+            <input value={formData.tag} onChange={event => setFormData(current => ({ ...current, tag: event.target.value }))} required placeholder="Nhãn" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
           </div>
-        )}
-      </Modal>
-
-      {/* Create Report Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="Create New Report"
-      >
-        <form className="space-y-4">
-          <div>
-            <label className="block text-xs uppercase tracking-wider font-medium text-gray-400 mb-1.5">Report Title</label>
-            <input type="text" className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="Enter report title" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wider font-medium text-gray-400 mb-1.5">Club</label>
-              <select className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500">
-                <option>Select club</option>
-                <option>Robotics Club</option>
-                <option>Photography Club</option>
-                <option>Music Ensemble</option>
-              </select>
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <p className="mb-3 font-semibold text-neutral-800">Chi tiết hoạt động đầu tiên</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input value={formData.activityName} onChange={event => setFormData(current => ({ ...current, activityName: event.target.value }))} required placeholder="Tên hoạt động" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+              <input type="date" value={formData.activityDate} onChange={event => setFormData(current => ({ ...current, activityDate: event.target.value }))} required className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+              <input type="number" min="0" value={formData.participantCount} onChange={event => setFormData(current => ({ ...current, participantCount: event.target.value }))} placeholder="Số người tham gia" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+              <input value={formData.outcome} onChange={event => setFormData(current => ({ ...current, outcome: event.target.value }))} placeholder="Kết quả" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider font-medium text-gray-400 mb-1.5">Report Type</label>
-              <select className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500">
-                <option>Quarterly</option>
-                <option>Event</option>
-                <option>Financial</option>
-                <option>Annual</option>
-              </select>
-            </div>
+            <textarea value={formData.description} onChange={event => setFormData(current => ({ ...current, description: event.target.value }))} rows={3} placeholder="Mô tả hoạt động" className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wider font-medium text-gray-400 mb-1.5">Priority</label>
-              <select className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500">
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider font-medium text-gray-400 mb-1.5">Date</label>
-              <input type="date" className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-wider font-medium text-gray-400 mb-1.5">Description</label>
-            <textarea className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white min-h-[100px] resize-none focus:outline-none focus:border-cyan-500" placeholder="Enter report description..." />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-3 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-700">Cancel</button>
-            <button type="button" onClick={() => { success('Report created successfully'); setShowModal(false) }} className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:shadow-cyan-500/30">Create Report</button>
-          </div>
+          <div className="flex gap-3"><button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === 'create'} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === 'create' ? 'Đang tạo...' : 'Tạo bản nháp'}</button></div>
         </form>
       </Modal>
-    </motion.div>
+
+      <Modal isOpen={Boolean(selectedReport)} onClose={() => setSelectedReport(null)} title="Chi tiết báo cáo" size="xl">
+        {selectedReport && (
+          <div className="space-y-5 text-neutral-700">
+            <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-lg bg-neutral-50 p-3"><p className="text-xs text-neutral-500">CLB</p><p className="mt-1 font-semibold">{selectedReport.clubName}</p></div><div className="rounded-lg bg-neutral-50 p-3"><p className="text-xs text-neutral-500">Kỳ</p><p className="mt-1 font-semibold">{selectedReport.period}</p></div><div className="rounded-lg bg-neutral-50 p-3"><p className="text-xs text-neutral-500">Trạng thái</p><p className="mt-1 font-semibold">{selectedReport.status}</p></div></div>
+            <div><h3 className="font-semibold text-neutral-900">Hoạt động</h3><div className="mt-2 space-y-2">{selectedReport.details?.map(detail => <div key={detail.id} className="rounded-lg border border-neutral-200 p-3"><p className="font-semibold">{detail.activityName}</p><p className="mt-1 text-sm">{detail.description}</p><p className="mt-2 text-xs text-neutral-500">{detail.activityDate} · {detail.participantCount} người · {detail.outcome}</p></div>)}</div></div>
+            {selectedReport.feedback?.length > 0 && <div><h3 className="font-semibold text-neutral-900">Phản hồi</h3><div className="mt-2 space-y-2">{selectedReport.feedback.map(item => <div key={item.id} className="rounded-lg bg-neutral-50 p-3 text-sm"><p className="font-semibold">{item.decision} — {item.reviewerName}</p><p className="mt-1">{item.message}</p></div>)}</div></div>}
+          </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} title={reviewAction === 'approve' ? 'Phê duyệt báo cáo' : reviewAction === 'forward' ? 'Chuyển báo cáo lên duyệt cuối' : 'Từ chối báo cáo'}>
+        <form onSubmit={submitReview} className="space-y-4">
+          <p className="text-sm text-neutral-600">{reviewTarget?.clubName} — {reviewTarget?.period}</p>
+          <textarea value={feedback} onChange={event => setFeedback(event.target.value)} required={reviewAction === 'reject'} rows={4} maxLength={1000} placeholder={reviewAction === 'reject' ? 'Nhập lý do từ chối' : 'Ghi chú (không bắt buộc)'} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
+          <div className="flex gap-3"><button type="button" onClick={() => setReviewTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === reviewTarget?.id} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white disabled:opacity-50 ${reviewAction === 'reject' ? 'bg-rose-600' : reviewAction === 'approve' ? 'bg-emerald-600' : 'bg-purple-600'}`}>{busyId === reviewTarget?.id ? 'Đang xử lý...' : 'Xác nhận'}</button></div>
+        </form>
+      </Modal>
+    </div>
   )
 }
