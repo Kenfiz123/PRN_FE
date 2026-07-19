@@ -177,10 +177,12 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
+                  <label htmlFor="register-name" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
                   <input
+                    id="register-name"
                     type="text"
                     name="name"
+                    autoComplete="name"
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Alex Chen"
@@ -190,10 +192,12 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Email Address</label>
+                  <label htmlFor="register-email" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Email Address</label>
                   <input
+                    id="register-email"
                     type="email"
                     name="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="alex@university.edu"
@@ -220,10 +224,12 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Password</label>
+                  <label htmlFor="register-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Password</label>
                   <input
+                    id="register-password"
                     type="password"
                     name="password"
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Min. 8 characters"
@@ -233,10 +239,12 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Confirm Password</label>
+                  <label htmlFor="register-confirm-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Confirm Password</label>
                   <input
+                    id="register-confirm-password"
                     type="password"
                     name="confirmPassword"
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Re-enter your password"

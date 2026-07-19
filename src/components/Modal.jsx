@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
   const titleId = useId()
   const panelRef = useRef(null)
+  const onCloseRef = useRef(onClose)
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-xl',
@@ -12,13 +13,17 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   }
 
   useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
     if (!isOpen) return undefined
 
     const previousOverflow = document.body.style.overflow
     const previouslyFocused = document.activeElement
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
 
@@ -46,10 +51,10 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleKeyDown)
     const focusFrame = window.requestAnimationFrame(() => {
-      const firstFocusable = panelRef.current?.querySelector(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+      const initialFocus = panelRef.current?.querySelector(
+        'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href]',
       )
-      ;(firstFocusable || panelRef.current)?.focus()
+      ;(initialFocus || panelRef.current)?.focus()
     })
 
     return () => {
@@ -58,7 +63,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       window.removeEventListener('keydown', handleKeyDown)
       previouslyFocused?.focus?.()
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
   return (
     <AnimatePresence>
@@ -94,7 +99,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
                   <button
                     type="button"
                     onClick={onClose}
-                    aria-label="Đóng hộp thoại"
+                    aria-label="Close dialog"
                     className="shrink-0 rounded-lg p-1.5 text-neutral-400 transition-all hover:bg-neutral-100 hover:text-neutral-600"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

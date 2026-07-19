@@ -182,8 +182,11 @@ class ApiService {
   }
 
   // User administration endpoints
-  async getUsers() {
-    return this.request('/api/users');
+  async getUsers(params = { page: 1, pageSize: 20 }) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    ).toString();
+    return this.request(`/api/users${query ? `?${query}` : ''}`);
   }
 
   async createUser(data) {
@@ -233,6 +236,49 @@ class ApiService {
     return this.request(`/api/clubs/${clubId}/join`, {
       method: 'POST',
       body: JSON.stringify(request),
+    });
+  }
+
+  async getClubApplications() {
+    return this.request('/api/clubs/applications');
+  }
+
+  async getMyClubApplications() {
+    return this.request('/api/clubs/applications/me');
+  }
+
+  async createClubApplication(data) {
+    return this.request('/api/clubs/applications', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateClubApplication(id, data) {
+    return this.request(`/api/clubs/applications/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async approveClubApplication(id, review = {}) {
+    return this.request(`/api/clubs/applications/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(review),
+    });
+  }
+
+  async requestClubApplicationRevision(id, review = {}) {
+    return this.request(`/api/clubs/applications/${id}/request-revision`, {
+      method: 'POST',
+      body: JSON.stringify(review),
+    });
+  }
+
+  async rejectClubApplication(id, review = {}) {
+    return this.request(`/api/clubs/applications/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(review),
     });
   }
 
@@ -389,6 +435,27 @@ class ApiService {
   async getReportAggregation(period) {
     const query = period ? `?period=${period}` : '';
     return this.request(`/api/reports/aggregate${query}`);
+  }
+
+  async getMyDeadlines() {
+    return this.request('/api/deadlines/me');
+  }
+
+  // Export jobs
+  async getExports(params = { page: 1, pageSize: 20 }) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/exports${query ? `?${query}` : ''}`);
+  }
+
+  async getExport(id) {
+    return this.request(`/api/exports/${id}`);
+  }
+
+  async createExport(data) {
+    return this.request('/api/exports', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   // Notifications
