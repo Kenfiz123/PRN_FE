@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { X } from 'lucide-react'
 
 const navItems = [
   {
@@ -69,132 +70,95 @@ const navItems = [
   }
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
   const location = useLocation()
   const { user, logout } = useAuth()
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-40 flex flex-col">
+    <aside className={`fixed inset-y-0 left-0 z-50 w-[250px] transform transition-transform duration-300 vanguard-sidebar flex flex-col ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      
       {/* Logo Section */}
-      <div className="h-20 flex items-center px-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center gap-3 w-full">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="h-[72px] flex items-center justify-between px-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="flex items-center gap-3 w-full cursor-pointer">
+          <div className="vanguard-brand-mark">
+            <svg className="w-5 h-5 text-[#071015]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white tracking-wide">ClubHub</h1>
-            <p className="text-[10px] text-cyan-400 uppercase tracking-[0.2em] font-medium">Report System</p>
+          <div>
+            <strong className="block text-[18px] tracking-[0.12em] font-podium text-white leading-tight">CLUBHUB</strong>
+            <small className="block mt-[3px] text-[9px] tracking-[0.22em] text-[#e6ecf8]/40 uppercase">Report System</small>
           </div>
         </div>
+        <button 
+          onClick={() => setIsMobileOpen(false)}
+          className="lg:hidden text-gray-400 hover:text-white"
+        >
+          <X size={18} />
+        </button>
       </div>
 
+      <p className="mx-6 mt-[15px] mb-[10px] text-[9px] font-semibold tracking-[0.28em] text-[#dde5f5]/35 uppercase">Workspace</p>
+
       {/* Navigation */}
-      <nav className="flex-1 py-6 px-4 overflow-y-auto">
-        <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold mb-3 px-3">Menu</p>
-        <div className="space-y-1">
-          {navItems.map((item, index) => (
-            <motion.div
-              key={item.path}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.04, type: 'spring', stiffness: 100 }}
-            >
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 relative ${
-                    isActive
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/10 text-white border border-cyan-500/30'
-                      : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeIndicator"
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-cyan-400 to-purple-400 rounded-r-full"
-                      />
-                    )}
-                    <span className={`transition-colors ${
-                      isActive ? 'text-cyan-400' : 'text-gray-500 group-hover:text-cyan-400'
-                    }`}>
-                      {item.icon}
-                    </span>
-                    <span className={`text-sm font-semibold transition-colors ${
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
-                    }`}>
-                      {item.name}
-                    </span>
-                    {item.badge && (
-                      <span className="ml-auto min-w-[24px] h-6 px-2 flex items-center justify-center text-xs font-bold rounded-full bg-rose-500 text-white shadow-lg shadow-rose-500/30">
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
+      <nav className="flex-1 px-3.5 overflow-y-auto space-y-1 flex flex-col pb-4">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            onClick={() => setIsMobileOpen(false)}
+            className={({ isActive }) => `vanguard-nav-item ${isActive ? 'is-active' : ''}`}
+          >
+            {({ isActive }) => (
+              <>
+                <span className={isActive ? 'text-[#83effa]' : 'opacity-80'}>
+                  {item.icon}
+                </span>
+                <span className="text-[13px] font-medium tracking-wide">{item.name}</span>
+                {isActive && <span className="vanguard-active-dot" />}
+                {!isActive && item.badge && (
+                  <span className="ml-auto min-w-[24px] h-5 px-1.5 flex items-center justify-center text-[10px] font-bold rounded-full bg-rose-500 text-white">
+                    {item.badge}
+                  </span>
                 )}
-              </NavLink>
-            </motion.div>
-          ))}
+              </>
+            )}
+          </NavLink>
+        ))}
+        
+        <div className="flex-1 min-h-[20px]"></div>
+
+        {/* System Status / Availability */}
+        <div className="vanguard-panel mx-1 mt-6 mb-3 p-3 flex items-center gap-2.5">
+          <div className="vanguard-orb">
+            <span />
+          </div>
+          <div>
+            <strong className="block text-[11px] font-semibold text-[#f8faff]/90">System Operational</strong>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40">24 Online · 156 Reports</small>
+          </div>
         </div>
 
-        {/* Stats at bottom of nav */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/5 border border-cyan-500/20 backdrop-blur"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-            </span>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.15em]">System Status</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-2xl font-bold text-white">24</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-0.5">Online</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-cyan-400">156</p>
-              <p className="text-[10px] text-cyan-400/70 uppercase tracking-wider font-medium mt-0.5">Reports</p>
-            </div>
-          </div>
-        </motion.div>
-      </nav>
-
-      {/* User Section */}
-      <div className="p-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <motion.div
-          whileHover={{ x: 2 }}
-          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer group"
-        >
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-cyan-500/30">
-              {user?.avatar || 'AC'}
-            </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-900" />
+        {/* User Section */}
+        <div className="vanguard-panel mx-1 p-3 flex items-center gap-2.5 group relative">
+          <div className="w-[34px] h-[34px] rounded-[11px] bg-gradient-to-br from-[#bff8ff] via-[#75e6f3] to-[#95a7ff] flex items-center justify-center text-[#081017] font-bold text-[10px]">
+            {user?.avatar || 'AC'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{user?.name || 'Guest User'}</p>
-            <p className="text-xs text-gray-400 truncate">{user?.role || 'Visitor'}</p>
+            <strong className="block text-[11px] font-semibold text-[#f8faff]/90 truncate">{user?.name || 'Guest User'}</strong>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.role || 'Visitor'}</small>
           </div>
           <button
             onClick={logout}
-            className="p-2 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
+            className="text-gray-400 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 absolute right-3"
             title="Logout"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           </button>
-        </motion.div>
-      </div>
+        </div>
+      </nav>
     </aside>
   )
 }

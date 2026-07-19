@@ -10,7 +10,9 @@ const activityHistory = [
   { action: 'Approved budget', date: '2024-12-07 02:30 PM', device: 'Chrome on Windows' }
 ]
 
-export default function ProfilePage() {
+import SystemAdminProfile from '../features/profile/SystemAdminProfile'
+
+function ExistingProfile() {
   const { user, updateProfile } = useAuth()
   const { success } = useToast()
   const [isEditing, setIsEditing] = useState(false)
@@ -317,5 +319,17 @@ export default function ProfilePage() {
         </div>
       </motion.div>
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  const { user } = useAuth()
+  
+  const isSystemAdmin = user?.roles?.includes('SYSTEM_ADMIN')
+  
+  return isSystemAdmin ? (
+    <SystemAdminProfile user={user} />
+  ) : (
+    <ExistingProfile />
   )
 }
