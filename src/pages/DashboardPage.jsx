@@ -49,10 +49,10 @@ export default function DashboardPage() {
     .slice(0, 4)
 
   const cards = [
-    { label: 'CLB có quyền', value: approvedClubs.length, color: 'text-cyan-300', href: '/clubs', show: hasPermission(PERMISSIONS.VIEW_CLUBS) },
-    { label: 'Báo cáo hiển thị', value: data.reports.length, color: 'text-purple-300', href: '/reports', show: hasPermission(PERMISSIONS.VIEW_REPORTS) },
-    { label: 'Hoạt động', value: data.activities.length, color: 'text-emerald-300', href: '/activities', show: hasPermission(PERMISSIONS.VIEW_ACTIVITIES) },
-    { label: 'Thông báo chưa đọc', value: unreadNotifications.length, color: 'text-amber-300', href: '/notifications', show: hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) },
+    { label: 'Accessible clubs', value: approvedClubs.length, color: 'text-cyan-300', href: '/clubs', show: hasPermission(PERMISSIONS.VIEW_CLUBS) },
+    { label: 'Visible reports', value: data.reports.length, color: 'text-purple-300', href: '/reports', show: hasPermission(PERMISSIONS.VIEW_REPORTS) },
+    { label: 'Activities', value: data.activities.length, color: 'text-emerald-300', href: '/activities', show: hasPermission(PERMISSIONS.VIEW_ACTIVITIES) },
+    { label: 'Unread notifications', value: unreadNotifications.length, color: 'text-amber-300', href: '/notifications', show: hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) },
   ].filter(card => card.show)
 
   return (
@@ -63,9 +63,9 @@ export default function DashboardPage() {
         className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-slate-900/60 to-purple-500/10 p-6 sm:p-8"
       >
         <p className="text-sm font-semibold uppercase tracking-wider text-cyan-300">ClubReportHub</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Xin chào, {user?.name || user?.username}</h2>
+        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Welcome, {user?.name || user?.username}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
-          Dữ liệu trên bảng điều khiển được giới hạn theo vai trò hệ thống và quyền CLB đã được phê duyệt của bạn.
+          Dashboard data is limited by your system role and approved club access.
         </p>
       </motion.section>
 
@@ -88,16 +88,16 @@ export default function DashboardPage() {
             {hasPermission(PERMISSIONS.VIEW_ACTIVITIES) && (
               <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Hoạt động sắp tới</h3>
-                  <Link to="/activities" className="text-sm font-semibold text-cyan-300">Xem tất cả</Link>
+                  <h3 className="text-lg font-bold text-white">Upcoming activities</h3>
+                  <Link to="/activities" className="text-sm font-semibold text-cyan-300">View all</Link>
                 </div>
                 {upcomingActivities.length === 0 ? (
-                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">Chưa có hoạt động sắp tới.</p>
+                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No upcoming activities.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
                     {upcomingActivities.map(activity => (
                       <div key={activity.id} className="rounded-xl bg-slate-950/50 p-4">
-                        <div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-white">{activity.title}</p><p className="mt-1 text-xs text-cyan-300">{activity.clubName}</p></div><time className="text-right text-xs text-gray-500">{new Date(activity.startTimeUtc).toLocaleDateString('vi-VN')}</time></div>
+                        <div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-white">{activity.title}</p><p className="mt-1 text-xs text-cyan-300">{activity.clubName}</p></div><time className="text-right text-xs text-gray-500">{new Date(activity.startTimeUtc).toLocaleDateString('en-US')}</time></div>
                       </div>
                     ))}
                   </div>
@@ -108,11 +108,11 @@ export default function DashboardPage() {
             {hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) && (
               <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Thông báo mới</h3>
-                  <Link to="/notifications" className="text-sm font-semibold text-cyan-300">Xem tất cả</Link>
+                  <h3 className="text-lg font-bold text-white">New notifications</h3>
+                  <Link to="/notifications" className="text-sm font-semibold text-cyan-300">View all</Link>
                 </div>
                 {unreadNotifications.length === 0 ? (
-                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">Không có thông báo chưa đọc.</p>
+                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No unread notifications.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
                     {unreadNotifications.slice(0, 4).map(notification => (

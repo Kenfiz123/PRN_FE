@@ -7,6 +7,19 @@ export const ROLES = Object.freeze({
   CLUB_MEMBER: 'CLUB_MEMBER',
 })
 
+export const ROLE_LABELS = Object.freeze({
+  [ROLES.ADMIN]: 'Administrator',
+  [ROLES.SYSTEM_ADMIN]: 'System administrator',
+  [ROLES.STUDENT_AFFAIRS_ADMIN]: 'Student affairs administrator',
+  [ROLES.CLUB_MANAGER]: 'Club manager',
+  [ROLES.TREASURER]: 'Treasurer',
+  [ROLES.CLUB_MEMBER]: 'Club member',
+})
+
+export function formatRole(role) {
+  return ROLE_LABELS[role] || role || 'Visitor'
+}
+
 export const PERMISSIONS = Object.freeze({
   VIEW_DASHBOARD: 'VIEW_DASHBOARD',
   VIEW_CLUBS: 'VIEW_CLUBS',
@@ -101,7 +114,11 @@ export function hasPermission(user, clubAccess = [], permission) {
     return true
   }
 
-  if (permission === PERMISSIONS.AUTHOR_REPORTS || permission === PERMISSIONS.MANAGE_ACTIVITIES) {
+  if (permission === PERMISSIONS.AUTHOR_REPORTS) {
+    return clubAccess.some(access => access.isManager || access.isTreasurer)
+  }
+
+  if (permission === PERMISSIONS.MANAGE_ACTIVITIES) {
     return clubAccess.some(access => access.isManager)
   }
 

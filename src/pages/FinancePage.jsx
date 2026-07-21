@@ -13,7 +13,7 @@ function normalizeStatus(status) {
 }
 
 function money(value) {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(value) || 0)
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(value) || 0)
 }
 
 function statusClass(status) {
@@ -21,6 +21,15 @@ function statusClass(status) {
   if (value === 'APPROVED' || value === 'SETTLED') return 'bg-emerald-500/15 text-emerald-300'
   if (value === 'REJECTED') return 'bg-rose-500/15 text-rose-300'
   return 'bg-amber-500/15 text-amber-300'
+}
+
+function FormField({ label, children }) {
+  return (
+    <label className="block text-sm font-semibold text-neutral-700">
+      <span className="mb-1.5 block">{label}</span>
+      {children}
+    </label>
+  )
 }
 
 export default function FinancePage() {
@@ -54,7 +63,7 @@ export default function FinancePage() {
       setProposals(Array.isArray(proposalResult?.items) ? proposalResult.items : [])
       setTransactions(Array.isArray(transactionResult) ? transactionResult : [])
     } catch (err) {
-      error(err.message || 'Không thể tải dữ liệu tài chính.')
+      error(err.message || 'Unable to load finance data.')
     } finally {
       setIsLoading(false)
     }
@@ -74,7 +83,7 @@ export default function FinancePage() {
     const club = treasurerClubs.find(item => item.clubId === Number(proposalForm.clubId))
     const requestedAmount = Number(proposalForm.requestedAmount)
     if (!club || !proposalForm.title.trim() || !proposalForm.description.trim() || requestedAmount <= 0) {
-      error('Vui lòng nhập đầy đủ CLB, tiêu đề, mô tả và số tiền hợp lệ.')
+      error('Please provide the club, title, description, and a valid amount.')
       return
     }
     setBusyId('create')
@@ -90,10 +99,10 @@ export default function FinancePage() {
       setProposals(current => [created, ...current])
       setShowCreate(false)
       setProposalForm(emptyProposal)
-      success('Đã gửi đề xuất ngân sách.')
+      success('Budget proposal submitted.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Không thể tạo đề xuất ngân sách.')
+      error(err.message || 'Unable to create the budget proposal.')
     } finally {
       setBusyId(null)
     }
@@ -110,12 +119,12 @@ export default function FinancePage() {
     event.preventDefault()
     if (!reviewTarget || busyId) return
     if (reviewAction === 'reject' && !reviewNote.trim()) {
-      error('Vui lòng nhập lý do từ chối.')
+      error('Please provide a rejection reason.')
       return
     }
     const amount = Number(reviewAmount)
     if (reviewAction === 'approve' && amount <= 0) {
-      error('Số tiền phê duyệt phải lớn hơn 0.')
+      error('The approved amount must be greater than zero.')
       return
     }
     setBusyId(reviewTarget.id)
@@ -125,10 +134,10 @@ export default function FinancePage() {
         : await api.rejectBudget(reviewTarget.id, reviewNote.trim())
       setProposals(current => current.map(item => item.id === updated.id ? updated : item))
       setReviewTarget(null)
-      success(reviewAction === 'approve' ? 'Đã phê duyệt ngân sách.' : 'Đã từ chối đề xuất.')
+      success(reviewAction === 'approve' ? 'Budget approved.' : 'Proposal rejected.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Không thể xét duyệt đề xuất.')
+      error(err.message || 'Unable to review the proposal.')
     } finally {
       setBusyId(null)
     }
@@ -139,7 +148,7 @@ export default function FinancePage() {
     if (!settlementTarget || busyId) return
     const totalSpent = Number(settlementForm.totalSpent)
     if (totalSpent <= 0 || !settlementForm.receiptUrl.trim()) {
-      error('Vui lòng nhập số tiền và URL chứng từ HTTPS hợp lệ.')
+      error('Please enter an amount and a valid HTTPS receipt URL.')
       return
     }
     setBusyId(settlementTarget.id)
@@ -151,10 +160,10 @@ export default function FinancePage() {
       setProposals(current => current.map(item => item.id === updated.id ? updated : item))
       setSettlementTarget(null)
       setSettlementForm(emptySettlement)
-      success('Đã gửi quyết toán.')
+      success('Settlement submitted.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Không thể gửi quyết toán.')
+      error(err.message || 'Unable to submit the settlement.')
     } finally {
       setBusyId(null)
     }
@@ -165,10 +174,10 @@ export default function FinancePage() {
     setBusyId(`settlement-${settlement.id}`)
     try {
       await api.approveSettlement(settlement.id)
-      success('Đã duyệt quyết toán.')
+      success('Settlement approved.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Không thể duyệt quyết toán.')
+      error(err.message || 'Unable to approve the settlement.')
     } finally {
       setBusyId(null)
     }
@@ -183,22 +192,22 @@ export default function FinancePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Tài chính</h2>
-          <p className="mt-1 text-sm text-gray-400">Chỉ thủ quỹ đã được duyệt của CLB mới có thể gửi đề xuất và quyết toán.</p>
+          <h2 className="text-2xl font-bold text-white">Finance</h2>
+          <p className="mt-1 text-sm text-gray-400">Only approved club treasurers can submit proposals and settlements.</p>
         </div>
         {treasurerClubs.length > 0 && (
           <button type="button" onClick={() => setShowCreate(true)} className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 font-semibold text-white">
-            Tạo đề xuất
+            Create proposal
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          ['Đề xuất', proposals.length, 'text-cyan-300'],
-          ['Đang chờ', proposals.filter(item => normalizeStatus(item.status) === 'SUBMITTED').length, 'text-amber-300'],
-          ['Ngân sách duyệt', money(approvedBudget), 'text-emerald-300'],
-          ['Đã quyết toán', money(spent), 'text-purple-300'],
+          ['Proposals', proposals.length, 'text-cyan-300'],
+          ['Pending', proposals.filter(item => normalizeStatus(item.status) === 'SUBMITTED').length, 'text-amber-300'],
+          ['Approved budget', money(approvedBudget), 'text-emerald-300'],
+          ['Settled amount', money(spent), 'text-purple-300'],
         ].map(([label, value, color]) => (
           <div key={label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className={`text-xl font-bold sm:text-2xl ${color}`}>{value}</p>
@@ -207,18 +216,18 @@ export default function FinancePage() {
         ))}
       </div>
 
-      <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white sm:w-auto">
-        <option value="ALL">Tất cả trạng thái</option>
-        <option value="SUBMITTED">Đang chờ</option>
-        <option value="APPROVED">Đã duyệt</option>
-        <option value="REJECTED">Bị từ chối</option>
-        <option value="SETTLED">Đã quyết toán</option>
+      <select aria-label="Filter budget proposals by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white sm:w-auto">
+        <option value="ALL">All statuses</option>
+        <option value="SUBMITTED">Pending</option>
+        <option value="APPROVED">Approved</option>
+        <option value="REJECTED">Rejected</option>
+        <option value="SETTLED">Settled</option>
       </select>
 
       {isLoading ? (
         <div className="flex min-h-64 items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-cyan-400" /></div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">Chưa có đề xuất ngân sách.</div>
+        <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">No budget proposals yet.</div>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {filtered.map(proposal => {
@@ -233,25 +242,25 @@ export default function FinancePage() {
                 </div>
                 <p className="mt-3 text-sm leading-6 text-gray-400">{proposal.description}</p>
                 <dl className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Đề xuất</dt><dd className="mt-1 font-bold text-white">{money(proposal.requestedAmount)}</dd></div>
-                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Được duyệt</dt><dd className="mt-1 font-bold text-emerald-300">{proposal.approvedAmount ? money(proposal.approvedAmount) : '—'}</dd></div>
+                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Requested</dt><dd className="mt-1 font-bold text-white">{money(proposal.requestedAmount)}</dd></div>
+                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Approved</dt><dd className="mt-1 font-bold text-emerald-300">{proposal.approvedAmount ? money(proposal.approvedAmount) : '—'}</dd></div>
                 </dl>
-                {proposal.reviewNote && <p className="mt-3 rounded-lg bg-slate-950/50 p-3 text-sm text-gray-300">Ghi chú: {proposal.reviewNote}</p>}
+                {proposal.reviewNote && <p className="mt-3 rounded-lg bg-slate-950/50 p-3 text-sm text-gray-300">Note: {proposal.reviewNote}</p>}
                 {proposal.settlements?.length > 0 && (
                   <div className="mt-4 space-y-2 border-t border-slate-800 pt-4">
                     {proposal.settlements.map(settlement => (
                       <div key={settlement.id} className="flex flex-col gap-2 rounded-lg bg-slate-950/50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div><p className="text-sm font-semibold text-white">Quyết toán {money(settlement.totalSpent)}</p><p className="text-xs text-gray-500">{settlement.status}</p></div>
+                        <div><p className="text-sm font-semibold text-white">Settlement {money(settlement.totalSpent)}</p><p className="text-xs text-gray-500">{settlement.status}</p></div>
                         {canReview && normalizeStatus(settlement.status) === 'SUBMITTED' && (
-                          <button type="button" onClick={() => approveSettlement(proposal, settlement)} disabled={busyId === `settlement-${settlement.id}`} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-50">Duyệt quyết toán</button>
+                          <button type="button" onClick={() => approveSettlement(proposal, settlement)} disabled={busyId === `settlement-${settlement.id}`} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-50">Approve settlement</button>
                         )}
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {canReview && status === 'SUBMITTED' && <><button type="button" onClick={() => openReview(proposal, 'reject')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">Từ chối</button><button type="button" onClick={() => openReview(proposal, 'approve')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-300">Phê duyệt</button></>}
-                  {isTreasurerClub && status === 'APPROVED' && !activeSettlement && <button type="button" onClick={() => setSettlementTarget(proposal)} className="rounded-lg bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-300">Gửi quyết toán</button>}
+                  {canReview && status === 'SUBMITTED' && <><button type="button" onClick={() => openReview(proposal, 'reject')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">Reject</button><button type="button" onClick={() => openReview(proposal, 'approve')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-300">Approve</button></>}
+                  {isTreasurerClub && status === 'APPROVED' && !activeSettlement && <button type="button" onClick={() => setSettlementTarget(proposal)} className="rounded-lg bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-300">Submit settlement</button>}
                 </div>
               </article>
             )
@@ -259,31 +268,31 @@ export default function FinancePage() {
         </div>
       )}
 
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Tạo đề xuất ngân sách" size="lg">
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Budget Proposal" size="lg">
         <form onSubmit={createProposal} className="space-y-4">
-          <select value={proposalForm.clubId} onChange={event => setProposalForm(current => ({ ...current, clubId: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900"><option value="">Chọn CLB</option>{treasurerClubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}</select>
-          <input value={proposalForm.title} onChange={event => setProposalForm(current => ({ ...current, title: event.target.value }))} required maxLength={200} placeholder="Tiêu đề đề xuất" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
-          <textarea value={proposalForm.description} onChange={event => setProposalForm(current => ({ ...current, description: event.target.value }))} required rows={4} maxLength={1000} placeholder="Mô tả mục đích sử dụng ngân sách" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
-          <div className="grid gap-4 sm:grid-cols-2"><input type="number" min="1" value={proposalForm.requestedAmount} onChange={event => setProposalForm(current => ({ ...current, requestedAmount: event.target.value }))} required placeholder="Số tiền đề xuất" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /><input type="number" min="1" value={proposalForm.activityId} onChange={event => setProposalForm(current => ({ ...current, activityId: event.target.value }))} placeholder="Mã hoạt động (không bắt buộc)" className="rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></div>
-          <div className="flex gap-3"><button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === 'create'} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === 'create' ? 'Đang gửi...' : 'Gửi đề xuất'}</button></div>
+          <FormField label="Club *"><select value={proposalForm.clubId} onChange={event => setProposalForm(current => ({ ...current, clubId: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900"><option value="">Select a club</option>{treasurerClubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}</select></FormField>
+          <FormField label="Proposal title *"><input value={proposalForm.title} onChange={event => setProposalForm(current => ({ ...current, title: event.target.value }))} required maxLength={200} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <FormField label="Budget use description *"><textarea value={proposalForm.description} onChange={event => setProposalForm(current => ({ ...current, description: event.target.value }))} required rows={4} maxLength={1000} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <div className="grid gap-4 sm:grid-cols-2"><FormField label="Requested amount (VND) *"><input type="number" min="1" value={proposalForm.requestedAmount} onChange={event => setProposalForm(current => ({ ...current, requestedAmount: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField><FormField label="Related activity ID"><input type="number" min="1" value={proposalForm.activityId} onChange={event => setProposalForm(current => ({ ...current, activityId: event.target.value }))} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField></div>
+          <div className="flex gap-3"><button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === 'create'} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === 'create' ? 'Submitting...' : 'Submit proposal'}</button></div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} title={reviewAction === 'approve' ? 'Phê duyệt ngân sách' : 'Từ chối đề xuất'}>
+      <Modal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} title={reviewAction === 'approve' ? 'Approve Budget' : 'Reject Proposal'}>
         <form onSubmit={submitReview} className="space-y-4">
           <p className="text-sm text-neutral-600">{reviewTarget?.clubName} — {reviewTarget?.title}</p>
-          {reviewAction === 'approve' && <input type="number" min="1" value={reviewAmount} onChange={event => setReviewAmount(event.target.value)} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" placeholder="Số tiền phê duyệt" />}
-          <textarea value={reviewNote} onChange={event => setReviewNote(event.target.value)} required={reviewAction === 'reject'} rows={4} maxLength={1000} placeholder={reviewAction === 'reject' ? 'Lý do từ chối' : 'Ghi chú'} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
-          <div className="flex gap-3"><button type="button" onClick={() => setReviewTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === reviewTarget?.id} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white disabled:opacity-50 ${reviewAction === 'approve' ? 'bg-emerald-600' : 'bg-rose-600'}`}>Xác nhận</button></div>
+          {reviewAction === 'approve' && <FormField label="Approved amount (VND) *"><input type="number" min="1" value={reviewAmount} onChange={event => setReviewAmount(event.target.value)} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>}
+          <FormField label={reviewAction === 'reject' ? 'Rejection reason *' : 'Review note'}><textarea value={reviewNote} onChange={event => setReviewNote(event.target.value)} required={reviewAction === 'reject'} rows={4} maxLength={1000} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <div className="flex gap-3"><button type="button" onClick={() => setReviewTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === reviewTarget?.id} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white disabled:opacity-50 ${reviewAction === 'approve' ? 'bg-emerald-600' : 'bg-rose-600'}`}>Confirm</button></div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(settlementTarget)} onClose={() => setSettlementTarget(null)} title="Gửi quyết toán">
+      <Modal isOpen={Boolean(settlementTarget)} onClose={() => setSettlementTarget(null)} title="Submit Settlement">
         <form onSubmit={submitSettlement} className="space-y-4">
-          <p className="text-sm text-neutral-600">{settlementTarget?.title} — tối đa {money(settlementTarget?.approvedAmount)}</p>
-          <input type="number" min="1" max={settlementTarget?.approvedAmount || undefined} value={settlementForm.totalSpent} onChange={event => setSettlementForm(current => ({ ...current, totalSpent: event.target.value }))} required placeholder="Tổng chi thực tế" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
-          <input type="url" value={settlementForm.receiptUrl} onChange={event => setSettlementForm(current => ({ ...current, receiptUrl: event.target.value }))} required pattern="https://.*" placeholder="https://... URL chứng từ" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
-          <div className="flex gap-3"><button type="button" onClick={() => setSettlementTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === settlementTarget?.id} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">Gửi quyết toán</button></div>
+          <p className="text-sm text-neutral-600">{settlementTarget?.title} — maximum {money(settlementTarget?.approvedAmount)}</p>
+          <FormField label="Actual total spent (VND) *"><input type="number" min="1" max={settlementTarget?.approvedAmount || undefined} value={settlementForm.totalSpent} onChange={event => setSettlementForm(current => ({ ...current, totalSpent: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <FormField label="Receipt URL *"><input type="url" value={settlementForm.receiptUrl} onChange={event => setSettlementForm(current => ({ ...current, receiptUrl: event.target.value }))} required pattern="https://.*" placeholder="https://..." className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <div className="flex gap-3"><button type="button" onClick={() => setSettlementTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === settlementTarget?.id} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">Submit settlement</button></div>
         </form>
       </Modal>
     </div>

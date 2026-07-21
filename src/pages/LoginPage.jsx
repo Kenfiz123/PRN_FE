@@ -129,7 +129,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
+              <label htmlFor="login-identifier" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
                 Email or Username
               </label>
               <div className="relative">
@@ -139,8 +139,10 @@ export default function LoginPage() {
                   </svg>
                 </span>
                 <input
+                  id="login-identifier"
                   type="text"
                   name="email"
+                  autoComplete="username"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="admin@club.edu"
@@ -174,7 +176,7 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
+              <label htmlFor="login-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
                 Password
               </label>
               <div className="relative">
@@ -184,8 +186,10 @@ export default function LoginPage() {
                   </svg>
                 </span>
                 <input
+                  id="login-password"
                   type="password"
                   name="password"
+                  autoComplete="current-password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"

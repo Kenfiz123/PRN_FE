@@ -34,7 +34,6 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       )]
       if (focusable.length === 0) {
         event.preventDefault()
-        panelRef.current.focus()
         return
       }
 
@@ -52,10 +51,10 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleKeyDown)
     const focusFrame = window.requestAnimationFrame(() => {
-      const firstFocusable = panelRef.current?.querySelector(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+      const initialFocus = panelRef.current?.querySelector(
+        'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href]',
       )
-      ;(firstFocusable || panelRef.current)?.focus()
+      ;(initialFocus || panelRef.current)?.focus()
     })
 
     return () => {
@@ -79,41 +78,38 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
             className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm z-50"
           />
 
-          {/* The flex wrapper owns centering so motion transforms cannot override it. */}
-          <div className="pointer-events-none fixed inset-0 z-[51] flex items-center justify-center p-4 sm:p-6">
+          {/* Modal Container */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              ref={panelRef}
+              tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
-              ref={panelRef}
-              tabIndex={-1}
-              className={`pointer-events-auto w-full ${sizeClasses[size]} max-h-[calc(100dvh-2rem)]`}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className={`w-full ${sizeClasses[size]} bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden focus:outline-none`}
             >
-              <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[calc(100dvh-3rem)]">
-                {/* Header */}
-                <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-5 py-4">
-                  <h2 id={titleId} className="pr-4 text-lg font-semibold text-neutral-900">{title}</h2>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    aria-label="Đóng hộp thoại"
-                    className="shrink-0 rounded-lg p-1.5 text-neutral-400 transition-all hover:bg-neutral-100 hover:text-neutral-600"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Content */}
-                <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-5">
-                  {children}
-                </div>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+                <h3 id={titleId} className="text-lg font-semibold text-slate-100 font-orbitron">
+                  {title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Đóng hộp thoại"
+                  className="text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+
+              {/* Body */}
+              <div className="p-6">{children}</div>
             </motion.div>
           </div>
         </>

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { api } from '../services/api'
+import { useNotifications } from '../context/NotificationContext'
 import { useToast } from '../context/ToastContext'
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat('vi-VN', {
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -12,26 +12,22 @@ function formatDate(value) {
 
 export default function NotificationsPage() {
   const { success, error } = useToast()
-  const [notifications, setNotifications] = useState([])
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    loadError,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useNotifications()
   const [filter, setFilter] = useState('all')
-  const [isLoading, setIsLoading] = useState(true)
   const [busyId, setBusyId] = useState(null)
 
-  const loadNotifications = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const result = await api.getNotifications(false)
-      setNotifications(Array.isArray(result) ? result : [])
-    } catch (err) {
-      error(err.message || 'Không thể tải thông báo.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [error])
-
   useEffect(() => {
-    loadNotifications()
-  }, [loadNotifications])
+    if (loadError) {
+      error(loadError.message || 'Unable to load notifications.')
+    }
+  }, [error, loadError])
 
   const filtered = useMemo(() => notifications.filter(notification => {
     if (filter === 'unread') return !notification.isRead
@@ -39,18 +35,13 @@ export default function NotificationsPage() {
     return true
   }), [filter, notifications])
 
-  const unreadCount = notifications.filter(notification => !notification.isRead).length
-
   const markRead = async (notification) => {
     if (notification.isRead || busyId) return
     setBusyId(notification.id)
     try {
-      await api.markNotificationRead(notification.id)
-      setNotifications(current => current.map(item =>
-        item.id === notification.id ? { ...item, isRead: true } : item,
-      ))
+      await markNotificationRead(notification.id)
     } catch (err) {
-      error(err.message || 'Không thể đánh dấu thông báo.')
+      error(err.message || 'Unable to mark the notification as read.')
     } finally {
       setBusyId(null)
     }
@@ -60,11 +51,10 @@ export default function NotificationsPage() {
     if (unreadCount === 0 || busyId) return
     setBusyId('all')
     try {
-      await api.markAllNotificationsRead()
-      setNotifications(current => current.map(item => ({ ...item, isRead: true })))
-      success('Đã đánh dấu tất cả thông báo là đã đọc.')
+      await markAllNotificationsRead()
+      success('All notifications have been marked as read.')
     } catch (err) {
-      error(err.message || 'Không thể đánh dấu tất cả thông báo.')
+      error(err.message || 'Unable to mark all notifications as read.')
     } finally {
       setBusyId(null)
     }
@@ -74,8 +64,8 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Thông báo</h2>
-          <p className="mt-1 text-sm text-gray-400">{unreadCount} thông báo chưa đọc</p>
+          <h2 className="text-2xl font-bold text-white">Notifications</h2>
+          <p className="mt-1 text-sm text-gray-400">{unreadCount} unread notifications</p>
         </div>
         <button
           type="button"
@@ -83,15 +73,15 @@ export default function NotificationsPage() {
           disabled={unreadCount === 0 || Boolean(busyId)}
           className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {busyId === 'all' ? 'Đang xử lý...' : 'Đánh dấu tất cả đã đọc'}
+          {busyId === 'all' ? 'Processing...' : 'Mark all as read'}
         </button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
-          ['all', `Tất cả (${notifications.length})`],
-          ['unread', `Chưa đọc (${unreadCount})`],
-          ['read', `Đã đọc (${notifications.length - unreadCount})`],
+          ['all', `All (${notifications.length})`],
+          ['unread', `Unread (${unreadCount})`],
+          ['read', `Read (${notifications.length - unreadCount})`],
         ].map(([value, label]) => (
           <button
             key={value}
@@ -114,7 +104,7 @@ export default function NotificationsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-700 py-14 text-center text-gray-500">
-          Không có thông báo trong nhóm này.
+          No notifications in this group.
         </div>
       ) : (
         <div className="space-y-3">

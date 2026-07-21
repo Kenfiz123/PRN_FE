@@ -3,6 +3,17 @@ import { api } from '../services/api';
 import { hasPermission as userHasPermission, ROLES } from '../auth/permissions';
 
 const AuthContext = createContext(null);
+const CLUB_ACCESS_ROLES = new Set([
+  ROLES.ADMIN,
+  ROLES.STUDENT_AFFAIRS_ADMIN,
+  ROLES.CLUB_MANAGER,
+  ROLES.TREASURER,
+  ROLES.CLUB_MEMBER,
+]);
+
+function canLoadClubAccess(actor) {
+  return actor?.roles?.some(role => CLUB_ACCESS_ROLES.has(role)) || false;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -10,7 +21,12 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const loadClubAccess = useCallback(async () => {
+  const loadClubAccess = useCallback(async (actor) => {
+    if (!canLoadClubAccess(actor)) {
+      setClubAccess([]);
+      return [];
+    }
+
     try {
       const access = await api.getMyClubAccess();
       const normalizedAccess = Array.isArray(access) ? access : [];
@@ -33,7 +49,7 @@ export function AuthProvider({ children }) {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setIsAuthenticated(true);
-          await loadClubAccess();
+          await loadClubAccess(parsedUser);
         } catch (e) {
           // Invalid stored data, clear it
           api.clearTokens();
@@ -65,7 +81,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
-      await loadClubAccess();
+      await loadClubAccess(userData);
 
       return userData;
     } catch (error) {
@@ -92,7 +108,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
-      await loadClubAccess();
+      await loadClubAccess(userData);
 
       return userData;
     } catch (error) {
@@ -141,6 +157,8 @@ export function AuthProvider({ children }) {
     return userHasPermission(user, clubAccess, permission);
   }, [clubAccess, user]);
 
+  const refreshClubAccess = useCallback(() => loadClubAccess(user), [loadClubAccess, user]);
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -156,7 +174,7 @@ export function AuthProvider({ children }) {
       isAdmin,
       isClubManager,
       isTreasurer,
-      refreshClubAccess: loadClubAccess,
+      refreshClubAccess,
       api,
     }}>
       {children}

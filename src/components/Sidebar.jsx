@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useNotifications } from '../context/NotificationContext'
 import { X } from 'lucide-react'
-import { PERMISSIONS } from '../auth/permissions'
+import { formatRole, PERMISSIONS } from '../auth/permissions'
 
 const navItems = [
   {
@@ -63,8 +64,7 @@ const navItems = [
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
       </svg>
-    ),
-    badge: 3
+    )
   },
   {
     path: '/profile',
@@ -91,6 +91,7 @@ const navItems = [
 export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
   const location = useLocation()
   const { user, logout, hasPermission } = useAuth()
+  const { unreadCount } = useNotifications()
   const visibleNavItems = navItems.filter(item => hasPermission(item.permission))
 
   return (
@@ -109,8 +110,11 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
             <small className="block mt-[3px] text-[9px] tracking-[0.22em] text-[#e6ecf8]/40 uppercase">Report System</small>
           </div>
         </div>
-        <button 
+        <button
+          type="button"
           onClick={() => setIsMobileOpen(false)}
+          aria-label="Close navigation menu"
+          title="Close navigation menu"
           className="lg:hidden text-gray-400 hover:text-white"
         >
           <X size={18} />
@@ -121,7 +125,9 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3.5 overflow-y-auto space-y-1 flex flex-col pb-4">
-        {visibleNavItems.map((item) => (
+        {visibleNavItems.map((item) => {
+          const badge = item.path === '/notifications' ? unreadCount : 0
+          return (
           <NavLink
             key={item.path}
             to={item.path}
@@ -134,16 +140,17 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
                   {item.icon}
                 </span>
                 <span className="text-[13px] font-medium tracking-wide">{item.name}</span>
-                {isActive && <span className="vanguard-active-dot" />}
-                {!isActive && item.badge && (
+                {isActive && badge === 0 && <span className="vanguard-active-dot" />}
+                {badge > 0 && (
                   <span className="ml-auto min-w-[24px] h-5 px-1.5 flex items-center justify-center text-[10px] font-bold rounded-full bg-rose-500 text-white">
-                    {item.badge}
+                    {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </>
             )}
           </NavLink>
-        ))}
+          )
+        })}
         
         <div className="flex-1 min-h-[20px]"></div>
 
@@ -153,8 +160,8 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
             <span />
           </div>
           <div>
-            <strong className="block text-[11px] font-semibold text-[#f8faff]/90">System Operational</strong>
-            <small className="block mt-1 text-[9px] text-[#dee6f5]/40">24 Online · 156 Reports</small>
+            <strong className="block text-[11px] font-semibold text-[#f8faff]/90">Secure session</strong>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40">Role-based access enabled</small>
           </div>
         </div>
 
@@ -165,12 +172,14 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
           </div>
           <div className="flex-1 min-w-0">
             <strong className="block text-[11px] font-semibold text-[#f8faff]/90 truncate">{user?.name || 'Guest User'}</strong>
-            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.roles?.join(', ') || 'Visitor'}</small>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.roles?.map(formatRole).join(', ') || 'Visitor'}</small>
           </div>
           <button
+            type="button"
             onClick={logout}
-            className="text-gray-400 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 absolute right-3"
-            title="Logout"
+            aria-label="Sign out"
+            className="text-gray-400 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 absolute right-3"
+            title="Sign out"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -1,32 +1,36 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Activity,
-  ArrowUpRight,
   Check,
   Mail,
-  MapPin,
   Pencil,
   ShieldCheck,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 import "./system-admin-profile.css";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { formatRole } from "../../auth/permissions";
 
 const VIDEO_URL =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260606_154941_df1a96e1-a06f-450c-bd02-d863414cc1a0.mp4";
 
 export default function SystemAdminProfile({ user }) {
-  const { updateProfile } = useAuth();
-  const { success } = useToast();
+  const { api, updateProfile } = useAuth();
+  const { success, error } = useToast();
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "System Admin",
     email: user?.email || "admin@system",
-    phone: user?.phone || "Chưa cập nhật",
-    bio: user?.bio || "Quản trị viên hệ thống cấp cao. Đảm bảo sự ổn định và an toàn của toàn bộ nền tảng.",
-    location: user?.location || "Chưa cập nhật",
   });
+
+  useEffect(() => {
+    setFormData({
+      name: user?.name || "System Admin",
+      email: user?.email || "admin@system",
+    });
+  }, [user?.email, user?.name]);
 
   const handleTilt = (event) => {
     const target = event.currentTarget;
@@ -48,12 +52,41 @@ export default function SystemAdminProfile({ user }) {
     target.style.setProperty("--mouse-y", "50%");
   };
 
-  const toggleEdit = () => {
-    if (editing) {
-      updateProfile(formData);
-      success("Profile updated successfully");
+  const toggleEdit = async () => {
+    if (!editing) {
+      setEditing(true);
+      return;
     }
-    setEditing(!editing);
+
+    const fullName = formData.name.trim();
+    const emailAddress = formData.email.trim();
+    if (!fullName || !emailAddress) {
+      error("Full name and email are required.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await api.updateUser(user.id, {
+        fullName,
+        email: emailAddress,
+        isActive: user.isActive,
+        roles: user.roles,
+      });
+      updateProfile({
+        name: updated.fullName,
+        email: updated.email,
+        roles: updated.roles,
+        isActive: updated.isActive,
+        isLocked: updated.isLocked,
+      });
+      setEditing(false);
+      success("Profile updated successfully.");
+    } catch (requestError) {
+      error(requestError.message || "Unable to update the profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChange = (field, value) => {
@@ -61,34 +94,16 @@ export default function SystemAdminProfile({ user }) {
   };
 
   const profileStats = [
-    { value: user?.joinDate || "2024", label: "Gia nhập" },
-    { value: "Admin", label: "Phân quyền" },
-    { value: "Active", label: "Trạng thái" },
+    { value: user?.username || "—", label: "Username" },
+    { value: "Technical Admin", label: "Role" },
+    { value: user?.isActive && !user?.isLocked ? "Active" : "Restricted", label: "Status" },
   ];
 
   const details = [
     { label: "Email", value: formData.email, field: "email", icon: Mail },
-    { label: "Phone", value: formData.phone, field: "phone", icon: Activity }, // Activity as placeholder for phone
-    { label: "Location", value: formData.location, field: "location", icon: MapPin },
-    { label: "Role", value: user?.roles?.join(", ") || "SYSTEM_ADMIN", field: "role", icon: ShieldCheck, readonly: true },
-  ];
-
-  const activityItems = [
-    {
-      title: "Đăng nhập hệ thống",
-      meta: "Thành công từ IP mới",
-      time: "Vừa xong",
-    },
-    {
-      title: "Cập nhật cấu hình",
-      meta: "Thay đổi cài đặt bảo mật",
-      time: "Hôm qua",
-    },
-    {
-      title: "Phê duyệt quyền",
-      meta: "Cấp quyền CLUB_MANAGER cho user mới",
-      time: "Tuần trước",
-    },
+    { label: "Username", value: user?.username || "—", icon: UserRound, readonly: true },
+    { label: "Role", value: user?.roles?.map(formatRole).join(", ") || "System administrator", icon: ShieldCheck, readonly: true },
+    { label: "Status", value: user?.isActive && !user?.isLocked ? "Active" : "Restricted", icon: Check, readonly: true },
   ];
 
   return (
@@ -110,9 +125,10 @@ export default function SystemAdminProfile({ user }) {
             type="button"
             className={`edit-button ${editing ? "is-editing" : ""}`}
             onClick={toggleEdit}
+            disabled={saving}
           >
             {editing ? <Check size={16} /> : <Pencil size={16} />}
-            {editing ? "Save changes" : "Edit profile"}
+            {saving ? "Saving..." : editing ? "Save changes" : "Edit profile"}
           </button>
         </div>
 
@@ -137,34 +153,20 @@ export default function SystemAdminProfile({ user }) {
                   <input 
                     value={formData.name}
                     onChange={(e) => handleChange("name", e.target.value)}
+                    disabled={saving}
+                    aria-label="Full name"
                     style={{ background: 'transparent', color: 'white', fontSize: '31px', fontWeight: 'bold', border: 'none', borderBottom: '1px solid #8cecf5', outline: 'none', width: '100%', marginBottom: '5px' }}
                   />
                 ) : (
                   <h3 className="font-podium" style={{ textTransform: 'uppercase' }}>{formData.name}</h3>
                 )}
-                <p>{user?.roles?.join(", ") || "SYSTEM ADMIN"}</p>
+                <p>{user?.roles?.map(formatRole).join(", ") || "System administrator"}</p>
               </div>
             </div>
 
-            {editing ? (
-              <textarea
-                value={formData.bio}
-                onChange={(e) => handleChange("bio", e.target.value)}
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#e5ebf7', fontSize: '13px', border: '1px solid #8cecf5', borderRadius: '8px', padding: '10px', marginTop: '25px', width: '100%', maxWidth: '540px', minHeight: '80px', outline: 'none' }}
-              />
-            ) : (
-              <p className="profile-bio">{formData.bio}</p>
-            )}
-
-            <div className="profile-actions">
-              <button type="button" className="primary-action">
-                System Logs
-                <ArrowUpRight size={17} />
-              </button>
-              <button type="button" className="secondary-action">
-                Settings
-              </button>
-            </div>
+            <p className="profile-bio">
+              Technical administrator responsible for platform access, account administration, stability, and security.
+            </p>
 
             <div className="profile-stats">
               {profileStats.map((stat) => (
@@ -199,16 +201,16 @@ export default function SystemAdminProfile({ user }) {
             </div>
 
             <div className="floating-card floating-card-main">
-              <span>System status</span>
-              <strong>All systems operational</strong>
-              <small>Uptime: 99.99% · 0 Active Alerts</small>
+              <span>Authenticated account</span>
+              <strong>{user?.username || "systemadmin@club.local"}</strong>
+              <small>Role-based access is enabled</small>
             </div>
 
             <div className="floating-card floating-card-mini">
-              <Activity size={18} />
+              <ShieldCheck size={18} />
               <div>
-                <strong>100%</strong>
-                <span>Health Score</span>
+                <strong>{user?.isActive && !user?.isLocked ? "Active" : "Restricted"}</strong>
+                <span>Account status</span>
               </div>
             </div>
 
@@ -220,7 +222,7 @@ export default function SystemAdminProfile({ user }) {
         </section>
 
         <div className="lower-grid">
-          <section className="detail-panel animate-fade-up-delay-2">
+          <section className="detail-panel animate-fade-up-delay-2" style={{ gridColumn: "1 / -1" }}>
             <div className="panel-heading">
               <div>
                 <span className="panel-kicker">Identity details</span>
@@ -244,6 +246,7 @@ export default function SystemAdminProfile({ user }) {
                           value={item.value}
                           onChange={(e) => handleChange(item.field, e.target.value)}
                           aria-label={item.label}
+                          disabled={saving}
                         />
                       ) : (
                         <strong>{item.value}</strong>
@@ -255,33 +258,6 @@ export default function SystemAdminProfile({ user }) {
             </div>
           </section>
 
-          <section className="activity-panel animate-fade-up-delay-3">
-            <div className="panel-heading">
-              <div>
-                <span className="panel-kicker">Latest signals</span>
-                <h3>Recent activity</h3>
-              </div>
-              <button type="button" className="text-button">
-                View all
-                <ArrowUpRight size={14} />
-              </button>
-            </div>
-
-            <div className="activity-list">
-              {activityItems.map((item, index) => (
-                <article className="activity-row" key={item.title}>
-                  <div className="activity-index">
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                  </div>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.meta}</p>
-                  </div>
-                  <time>{item.time}</time>
-                </article>
-              ))}
-            </div>
-          </section>
         </div>
       </div>
     </div>
