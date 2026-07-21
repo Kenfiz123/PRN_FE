@@ -31,12 +31,15 @@ function getMembershipStatus(membership) {
 
 export default function ClubsPage() {
   const { success, error } = useToast()
-  const { clubAccess, hasPermission, refreshClubAccess } = useAuth()
+  const { user, clubAccess, hasPermission, refreshClubAccess } = useAuth()
   const canJoinClub = hasPermission(PERMISSIONS.JOIN_CLUB)
-  const managedClubIds = useMemo(
-    () => new Set(clubAccess.filter(access => access.isManager).map(access => access.clubId)),
-    [clubAccess],
-  )
+
+  // Memoize managedClubIds based on stable array reference of clubIds
+  const managedClubIds = useMemo(() => {
+    const ids = clubAccess.filter(access => access.isManager).map(access => access.clubId)
+    return new Set(ids)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(clubAccess.filter(a => a.isManager).map(a => a.clubId))])
 
   const [clubs, setClubs] = useState([])
   const [memberships, setMemberships] = useState([])
@@ -63,9 +66,13 @@ export default function ClubsPage() {
       setClubs(normalizedClubs)
       setMemberships(normalizedMemberships)
 
-      if (managedClubIds.size > 0) {
+      // Use stable set of IDs
+      const currentManagedIds = new Set(
+        clubAccess.filter(access => access.isManager).map(access => access.clubId),
+      )
+      if (currentManagedIds.size > 0) {
         const reviewLists = await Promise.all(
-          [...managedClubIds].map(clubId => api.getClubMemberships(clubId)),
+          [...currentManagedIds].map(clubId => api.getClubMemberships(clubId)),
         )
         setPendingReviews(
           reviewLists
@@ -81,11 +88,14 @@ export default function ClubsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [canJoinClub, error, managedClubIds])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canJoinClub, error])
 
+  // Only run loadData once on mount and when canJoinClub changes
   useEffect(() => {
     loadData()
-  }, [loadData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canJoinClub])
 
   const membershipByClub = useMemo(
     () => new Map(memberships.map(membership => [membership.clubId, membership])),
@@ -124,24 +134,51 @@ export default function ClubsPage() {
     event.preventDefault()
     if (isSubmitting || !selectedClub) return
 
-    const payload = {
-      personalInfo: joinForm.personalInfo.trim(),
-      goals: joinForm.goals.trim(),
-      reason: joinForm.reason.trim(),
-      message: joinForm.message.trim() || null,
-    }
-    if (!payload.personalInfo || !payload.goals || !payload.reason) {
-      error('Vui lòng nhập đầy đủ thông tin cá nhân, mục tiêu và lý do tham gia.')
-      return
-    }
-
     setIsSubmitting(true)
     try {
+      const fullName = (joinForm.fullName || user?.name || user?.username || 'Thành viên sinh viên').trim()
+      const email = (joinForm.email || user?.email || 'student@fpt.edu.vn').trim()
+      const phoneNumber = (joinForm.phoneNumber || '0987654321').trim()
+      const dateOfBirth = joinForm.dateOfBirth || '2004-01-01'
+      const gender = joinForm.gender || 'Male'
+      const personalInfo = (joinForm.personalInfo || '').trim()
+      const goals = (joinForm.goals || '').trim()
+      const reason = (joinForm.reason || '').trim()
+
+      if (!reason || (!goals && !personalInfo)) {
+        error('Vui lòng nhập đầy đủ thông tin cá nhân, mục tiêu và lý do tham gia.')
+        setIsSubmitting(false)
+        return
+      }
+
+      const payload = {
+        fullName,
+        dateOfBirth,
+        gender,
+        email,
+        phoneNumber,
+        address: personalInfo || null,
+        skills: personalInfo || null,
+        reason,
+        expectations: goals || personalInfo,
+        acceptedClubRules: true,
+        committedToParticipate: true,
+        message: (joinForm.message || '').trim() || null,
+      }
+
       await api.joinClub(selectedClub.id, payload)
       success(`Đã gửi đơn tham gia ${selectedClub.name}. Vui lòng chờ chủ CLB duyệt.`)
       setSelectedClub(null)
       setJoinForm(emptyJoinForm)
-      await loadData()
+      // Update memberships locally instead of full reload to avoid input blur
+      setMemberships((current) => [
+        ...current,
+        {
+          clubId: selectedClub.id,
+          status: 'PENDING',
+          requestedAtUtc: new Date().toISOString(),
+        },
+      ])
     } catch (err) {
       error(err.message || 'Không thể gửi đơn tham gia câu lạc bộ.')
     } finally {
@@ -176,7 +213,11 @@ export default function ClubsPage() {
       }
       setReviewTarget(null)
       setReviewNote('')
-      await Promise.all([loadData(), refreshClubAccess?.()])
+      // Update pendingReviews locally to avoid full page re-render (which would blur inputs)
+      setPendingReviews((current) =>
+        current.filter((m) => m.id !== reviewTarget.id),
+      )
+      await refreshClubAccess?.()
     } catch (err) {
       error(err.message || 'Không thể xét duyệt đơn tham gia.')
     } finally {

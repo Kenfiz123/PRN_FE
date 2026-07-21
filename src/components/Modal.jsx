@@ -4,6 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
   const titleId = useId()
   const panelRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
+
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-xl',
@@ -18,7 +24,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     const previouslyFocused = document.activeElement
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        onClose()
+        onCloseRef.current?.()
         return
       }
 
@@ -58,7 +64,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
       window.removeEventListener('keydown', handleKeyDown)
       previouslyFocused?.focus?.()
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
   return (
     <AnimatePresence>

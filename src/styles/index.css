@@ -589,6 +589,30 @@ h1, h2, h3, h4, h5, h6 {
   color: #9ca3af;
 }
 
+/* Reports form: a compact, readable workflow layered over the legacy cyber theme. */
+.report-form input,
+.report-form select,
+.report-form textarea {
+  min-height: 2.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.report-form textarea {
+  min-height: auto;
+  line-height: 1.6;
+}
+
+.report-form label {
+  font-size: 0.8125rem !important;
+  letter-spacing: 0.025em;
+}
+
+.report-form h2 { letter-spacing: 0.035em; }
+
+.report-form input::placeholder,
+.report-form textarea::placeholder { color: #718096; opacity: 1; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .cyber-card {

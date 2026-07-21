@@ -264,9 +264,20 @@ class ApiService {
     return this.request(`/api/reports/${id}`);
   }
 
+  async getReportingDeadlines() {
+    return this.request('/api/reporting-deadlines');
+  }
+
   async createReport(data) {
     return this.request('/api/reports', {
       method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateReport(id, data) {
+    return this.request(`/api/reports/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     });
   }

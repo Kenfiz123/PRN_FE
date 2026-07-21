@@ -9,6 +9,8 @@ import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ClubsPage from './pages/ClubsPage'
 import ReportsPage from './pages/ReportsPage'
+import CreateReportPage from './pages/CreateReportPage'
+import ReportDetailPage from './pages/ReportDetailPage'
 import ActivitiesPage from './pages/ActivitiesPage'
 import FinancePage from './pages/FinancePage'
 import NotificationsPage from './pages/NotificationsPage'
@@ -114,6 +116,30 @@ export default function App() {
         element={
           <LayoutRoute title="Reports" subtitle="Management" permission={PERMISSIONS.VIEW_REPORTS}>
             <ReportsPage />
+          </LayoutRoute>
+        }
+      />
+      <Route
+        path="/reports/create"
+        element={
+          <LayoutRoute title="Tạo báo cáo" subtitle="Lập báo cáo hoạt động kỳ mới" permission={PERMISSIONS.AUTHOR_REPORTS}>
+            <CreateReportPage />
+          </LayoutRoute>
+        }
+      />
+      <Route
+        path="/reports/:id"
+        element={
+          <LayoutRoute title="Chi tiết báo cáo" subtitle="Nội dung báo cáo hoạt động" permission={PERMISSIONS.VIEW_REPORTS}>
+            <ReportDetailPage />
+          </LayoutRoute>
+        }
+      />
+      <Route
+        path="/reports/:id/edit"
+        element={
+          <LayoutRoute title="Chỉnh sửa báo cáo" subtitle="Cập nhật báo cáo hoạt động" permission={PERMISSIONS.AUTHOR_REPORTS}>
+            <CreateReportPage />
           </LayoutRoute>
         }
       />
