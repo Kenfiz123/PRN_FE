@@ -27,7 +27,7 @@ export default function LoginPage() {
   const validate = () => {
     const newErrors = {}
     if (!formData.email) {
-      newErrors.email = 'Vui lòng nhập email hoặc tên đăng nhập.'
+      newErrors.email = 'Vui lòng nhập thư điện tử hoặc tên đăng nhập.'
     }
     if (!formData.password) {
       newErrors.password = 'Vui lòng nhập mật khẩu.'
@@ -121,7 +121,7 @@ export default function LoginPage() {
               transition={{ delay: 0.4 }}
             >
               <label htmlFor="login-identifier" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                Email hoặc tên đăng nhập
+                Thư điện tử hoặc tên đăng nhập
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none" style={{ color: 'var(--text-muted)' }}>
@@ -168,7 +168,7 @@ export default function LoginPage() {
               transition={{ delay: 0.5 }}
             >
               <label htmlFor="login-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                Password
+                Mật khẩu
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none" style={{ color: 'var(--text-muted)' }}>

@@ -18,7 +18,7 @@ function formatMemberRole(role) {
   if (role === 'CLUB_OWNER') return 'Chủ nhiệm'
   if (role === 'TREASURER') return 'Thủ quỹ'
   if (role === 'MEMBER' || role === 'CLUB_MEMBER') return 'Thành viên'
-  return role || '-'
+  return 'Không xác định'
 }
 
 function Participation({ value }) {
@@ -128,7 +128,7 @@ export default function ClubMembersPage() {
       </div>
 
       <div className="grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:grid-cols-5">
-        <input aria-label="Tìm kiếm thành viên" value={filters.search} onChange={event => updateFilter('search', event.target.value)} placeholder="Tên, email hoặc số điện thoại..." className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500 md:col-span-2" />
+        <input aria-label="Tìm kiếm thành viên" value={filters.search} onChange={event => updateFilter('search', event.target.value)} placeholder="Tên, thư điện tử hoặc số điện thoại..." className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-500 md:col-span-2" />
         <select value={filters.status} onChange={event => updateFilter('status', event.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white"><option value="Approved">Đã duyệt</option><option value="Pending">Chờ duyệt</option><option value="Rejected">Từ chối</option><option value="All">Tất cả</option></select>
         <select value={filters.role} onChange={event => updateFilter('role', event.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white"><option value="All">Tất cả vị trí</option><option value="MEMBER">Thành viên</option><option value="TREASURER">Thủ quỹ</option></select>
         <select value={`${filters.sortBy}:${filters.sortDirection}`} onChange={event => { const [sortBy, sortDirection] = event.target.value.split(':'); setFilters(current => ({ ...current, sortBy, sortDirection, page: 1 })) }} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white"><option value="name:asc">Tên A-Z</option><option value="name:desc">Tên Z-A</option><option value="joinedAt:desc">Thành viên mới nhất</option><option value="joinedAt:asc">Thành viên lâu nhất</option><option value="role:asc">Vị trí</option></select>
@@ -159,7 +159,7 @@ export default function ClubMembersPage() {
 
       <Modal isOpen={detailLoading || Boolean(selected)} onClose={() => setSelected(null)} title="Chi tiết thành viên" size="xl">
         {detailLoading ? <div className="py-16 text-center text-neutral-500">Đang tải chi tiết thành viên...</div> : selected && <div className="space-y-6 text-neutral-800">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-xs text-neutral-500">Họ và tên</p><p className="font-semibold">{selected.member.fullName}</p></div><div><p className="text-xs text-neutral-500">Email</p><p className="font-semibold">{selected.member.email}</p></div><div><p className="text-xs text-neutral-500">Điện thoại</p><p className="font-semibold">{selected.member.phoneNumber || '-'}</p></div><div><p className="text-xs text-neutral-500">Ngày tham gia</p><p className="font-semibold">{formatDate(selected.joinedAtUtc)}</p></div></div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-xs text-neutral-500">Họ và tên</p><p className="font-semibold">{selected.member.fullName}</p></div><div><p className="text-xs text-neutral-500">Thư điện tử</p><p className="font-semibold">{selected.member.email}</p></div><div><p className="text-xs text-neutral-500">Điện thoại</p><p className="font-semibold">{selected.member.phoneNumber || '-'}</p></div><div><p className="text-xs text-neutral-500">Ngày tham gia</p><p className="font-semibold">{formatDate(selected.joinedAtUtc)}</p></div></div>
           <div className="rounded-xl bg-neutral-100 p-4"><p className="text-sm font-semibold">Tỷ lệ tham gia</p><p className="mt-1 text-3xl font-bold text-cyan-700">{Number(selected.participation.participationRate).toFixed(2)}%</p><p className="text-sm text-neutral-500">Có mặt {selected.participation.attendedActivities}/{selected.participation.eligibleActivities} hoạt động hợp lệ</p></div>
           <div><h3 className="font-bold">Lịch sử hoạt động</h3><div className="mt-3 divide-y divide-neutral-200 rounded-xl border border-neutral-200">{selected.activityHistory.length ? selected.activityHistory.map(item => <div key={item.activityId} className="flex items-center justify-between gap-4 p-3"><div><p className="font-semibold">{item.title}</p><p className="text-xs text-neutral-500">{formatDate(item.startTimeUtc)}, {formatActivityStatus(item.activityStatus)}</p></div><span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">{formatAttendanceStatus(item.attendanceStatus)}</span></div>) : <p className="p-6 text-center text-neutral-500">Chưa có hoạt động hợp lệ.</p>}</div></div>
         </div>}

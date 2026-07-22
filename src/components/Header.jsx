@@ -227,7 +227,7 @@ export default function Header({ title, onMenuClick }) {
                     {user?.avatar || 'AC'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[#f8faff] text-[13px] truncate">{user?.name || 'User'}</p>
+                    <p className="font-bold text-[#f8faff] text-[13px] truncate">{user?.name || 'Người dùng'}</p>
                     <p className="text-[11px] text-gray-500 truncate">{user?.email || ''}</p>
                     <p className="mt-1 text-[11px] text-[#83effa] truncate">{user?.roles?.map(formatRole).join(', ') || ''}</p>
                   </div>

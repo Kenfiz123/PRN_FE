@@ -372,7 +372,7 @@ export default function CreateReportPage() {
                 Nhập trực tiếp trên hệ thống
               </h3>
               <p className="mt-1 text-xs text-slate-400">
-                Khai báo theo mẫu chuẩn 4 bước: Thông tin chung, Hoạt động, Đánh giá & Phê duyệt.
+                Khai báo theo mẫu chuẩn 4 bước: Thông tin chung, Hoạt động, Đánh giá và Phê duyệt.
               </p>
             </div>
           </button>
@@ -606,7 +606,7 @@ export default function CreateReportPage() {
               disabled={isSubmitting || !selectedFile}
               className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
             >
-              <Upload size={18} /> {isSubmitting ? 'Đang tải lên...' : 'Tải lên & Lưu dự thảo'}
+              <Upload size={18} /> {isSubmitting ? 'Đang tải lên...' : 'Tải lên và lưu dự thảo'}
             </button>
           </div>
         </form>
@@ -629,10 +629,10 @@ export default function CreateReportPage() {
                     : 'text-slate-500 hover:bg-slate-800/50'
                 }`}
               >
-                {s === 1 && '1. GENERAL INFO'}
-                {s === 2 && `2. ACTIVITIES (${activities.length})`}
-                {s === 3 && '3. EVALUATION'}
-                {s === 4 && '4. PREVIEW'}
+                {s === 1 && '1. THÔNG TIN CHUNG'}
+                {s === 2 && `2. HOẠT ĐỘNG (${activities.length})`}
+                {s === 3 && '3. ĐÁNH GIÁ'}
+                {s === 4 && '4. XEM TRƯỚC'}
               </button>
             ))}
           </div>
@@ -641,7 +641,7 @@ export default function CreateReportPage() {
           {step === 1 && (
             <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
               <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                <FileText size={20} className="text-cyan-400" /> STEP 1: GENERAL INFORMATION
+                <FileText size={20} className="text-cyan-400" /> BƯỚC 1: THÔNG TIN CHUNG
               </h2>
 
               <div className="grid gap-5 sm:grid-cols-2">
@@ -742,7 +742,7 @@ export default function CreateReportPage() {
           {step === 2 && (
             <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-100">STEP 2: DANH SÁCH HOẠT ĐỘNG ({activities.length})</h2>
+                <h2 className="text-lg font-semibold text-slate-100">BƯỚC 2: DANH SÁCH HOẠT ĐỘNG ({activities.length})</h2>
                 <button
                   type="button"
                   onClick={() => setActivities([...activities, {
@@ -837,7 +837,7 @@ export default function CreateReportPage() {
           {/* STEP 3 */}
           {step === 3 && (
             <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
-              <h2 className="text-lg font-semibold text-slate-100">STEP 3: ĐÁNH GIÁ VÀ KẾ HOẠCH</h2>
+              <h2 className="text-lg font-semibold text-slate-100">BƯỚC 3: ĐÁNH GIÁ VÀ KẾ HOẠCH</h2>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">Thành tựu nổi bật</label>
@@ -905,7 +905,7 @@ export default function CreateReportPage() {
           {/* STEP 4 */}
           {step === 4 && (
             <div className="rounded-xl border border-cyan-500/30 bg-slate-900/80 p-6 space-y-6">
-              <h2 className="text-lg font-bold font-orbitron text-cyan-400">STEP 4: XEM TRƯỚC VÀ NỘP BÁO CÁO</h2>
+              <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 4: XEM TRƯỚC VÀ NỘP BÁO CÁO</h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/60 rounded-xl border border-slate-800">
                 <div>

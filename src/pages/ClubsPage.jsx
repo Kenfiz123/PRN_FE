@@ -8,60 +8,60 @@ import { PERMISSIONS } from '../auth/permissions'
 import { api } from '../services/api'
 
 const CATEGORY_LABELS = {
-  SPORTS: 'Sports',
-  ARTS: 'Arts',
-  ACADEMIC: 'Academic',
-  VOLUNTEER: 'Volunteer',
-  TECHNOLOGY: 'Technology',
-  OTHER: 'Other',
+  SPORTS: 'Thể thao',
+  ARTS: 'Nghệ thuật',
+  ACADEMIC: 'Học thuật',
+  VOLUNTEER: 'Tình nguyện',
+  TECHNOLOGY: 'Công nghệ',
+  OTHER: 'Khác',
 }
 
 const CATEGORY_FIELDS = {
   SPORTS: [
-    ['sport', 'Sport'],
-    ['level', 'Skill level'],
-    ['experience', 'Experience'],
+    ['sport', 'Môn thể thao'],
+    ['level', 'Trình độ kỹ năng'],
+    ['experience', 'Kinh nghiệm'],
   ],
   ARTS: [
-    ['artField', 'Art discipline'],
-    ['level', 'Skill level'],
+    ['artField', 'Lĩnh vực nghệ thuật'],
+    ['level', 'Trình độ kỹ năng'],
   ],
   ACADEMIC: [
-    ['academicInterest', 'Academic field of interest'],
-    ['learningGoal', 'Learning goal'],
+    ['academicInterest', 'Lĩnh vực học thuật quan tâm'],
+    ['learningGoal', 'Mục tiêu học tập'],
   ],
   VOLUNTEER: [
-    ['volunteerInterest', 'Area of interest'],
-    ['socialWorkExperience', 'Community service experience'],
+    ['volunteerInterest', 'Lĩnh vực quan tâm'],
+    ['socialWorkExperience', 'Kinh nghiệm hoạt động cộng đồng'],
   ],
   TECHNOLOGY: [
-    ['programmingLanguages', 'Programming languages'],
-    ['projects', 'Previous projects'],
+    ['programmingLanguages', 'Ngôn ngữ lập trình'],
+    ['projects', 'Dự án trước đây'],
   ],
-  OTHER: [['other', 'Additional information']],
+  OTHER: [['other', 'Thông tin bổ sung']],
 }
 
 const GENDER_LABELS = {
-  MALE: 'Male',
-  FEMALE: 'Female',
-  OTHER: 'Other',
+  MALE: 'Nam',
+  FEMALE: 'Nữ',
+  OTHER: 'Khác',
 }
 
 const VENUE_SUPPORT_LABELS = {
-  SUPPORT_NEEDED: 'Support needed',
-  SELF_MANAGED: 'Self-managed',
+  SUPPORT_NEEDED: 'Cần hỗ trợ',
+  SELF_MANAGED: 'Tự quản lý',
 }
 
 const FUNDING_SUPPORT_LABELS = {
-  SUPPORT_NEEDED: 'Support needed',
-  SELF_FUNDED: 'Self-funded',
-  COMBINED: 'Combined',
+  SUPPORT_NEEDED: 'Cần hỗ trợ',
+  SELF_FUNDED: 'Tự tài trợ',
+  COMBINED: 'Kết hợp',
 }
 
 const ACTIVITY_FREQUENCY_UNITS = {
-  WEEK: 'week',
-  MONTH: 'month',
-  YEAR: 'year',
+  WEEK: 'tuần',
+  MONTH: 'tháng',
+  YEAR: 'năm',
 }
 
 const STATUS_STYLES = {
@@ -73,11 +73,11 @@ const STATUS_STYLES = {
 }
 
 const STATUS_LABELS = {
-  PENDING: 'Pending review',
-  SUBMITTED: 'Submitted',
-  NEEDSREVISION: 'Needs revision',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
+  PENDING: 'Chờ xét duyệt',
+  SUBMITTED: 'Đã gửi',
+  NEEDSREVISION: 'Cần chỉnh sửa',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Đã từ chối',
 }
 
 const inputClass = 'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100'
@@ -89,12 +89,12 @@ function normalizedStatus(value) {
 
 function formatDate(value) {
   if (!value) return '—'
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
 function getAdditionalFieldLabel(category, key) {
   return (CATEGORY_FIELDS[category] || CATEGORY_FIELDS.OTHER)
-    .find(([fieldKey]) => fieldKey === key)?.[1] || key
+    .find(([fieldKey]) => fieldKey === key)?.[1] || 'Thông tin bổ sung'
 }
 
 function parseActivityFrequency(value) {
@@ -105,7 +105,7 @@ function parseActivityFrequency(value) {
 }
 
 function formatActivityFrequency(count, unit) {
-  return `${Number(count)} times per ${ACTIVITY_FREQUENCY_UNITS[unit] || ACTIVITY_FREQUENCY_UNITS.MONTH}`
+  return `${Number(count)} lần mỗi ${ACTIVITY_FREQUENCY_UNITS[unit] || ACTIVITY_FREQUENCY_UNITS.MONTH}`
 }
 
 function createJoinForm(user) {
@@ -137,7 +137,7 @@ function createClubForm(user) {
     description: '',
     logoUrl: '',
     founderFullName: user?.name || '',
-    founderRole: 'Club President',
+    founderRole: 'Chủ nhiệm câu lạc bộ',
     founderEmail: user?.email || '',
     founderPhone: '',
     founderOrganization: '',
@@ -265,7 +265,7 @@ function StatusBadge({ status }) {
   const normalized = normalizedStatus(status)
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[normalized] || STATUS_STYLES.SUBMITTED}`}>
-      {STATUS_LABELS[normalized] || status}
+      {STATUS_LABELS[normalized] || 'Không xác định'}
     </span>
   )
 }
@@ -354,7 +354,7 @@ export default function ClubsPage() {
         setPendingMemberReviews([])
       }
     } catch (err) {
-      error(err.message || 'Unable to load club data.')
+      error(err.message || 'Không thể tải dữ liệu câu lạc bộ.')
     } finally {
       setIsLoading(false)
     }
@@ -406,7 +406,7 @@ export default function ClubsPage() {
     event.preventDefault()
     if (!selectedClub || isSubmitting) return
     if (!joinForm.acceptedClubRules || !joinForm.committedToParticipate) {
-      error('You must accept both participation commitments.')
+      error('Bạn phải đồng ý với cả hai cam kết tham gia.')
       return
     }
 
@@ -421,11 +421,11 @@ export default function ClubsPage() {
         contributions: joinForm.contributions.trim() || null,
         message: joinForm.message.trim() || null,
       })
-      success(`Your application to join ${selectedClub.name} has been submitted for club manager review.`)
+      success(`Đơn xin tham gia ${selectedClub.name} đã được gửi đến chủ nhiệm câu lạc bộ để xét duyệt.`)
       setSelectedClub(null)
       await loadData()
     } catch (err) {
-      error(err.message || 'Unable to submit the club membership application.')
+      error(err.message || 'Không thể gửi đơn xin tham gia câu lạc bộ.')
     } finally {
       setIsSubmitting(false)
     }
@@ -438,15 +438,15 @@ export default function ClubsPage() {
     try {
       if (membershipReviewAction === 'approve') {
         await api.approveClubMembership(membershipReview.id, membershipReviewNote.trim())
-        success(`${membershipReview.fullName} has been approved to join ${membershipReview.clubName}.`)
+        success(`Đã duyệt ${membershipReview.fullName} tham gia ${membershipReview.clubName}.`)
       } else {
         await api.rejectClubMembership(membershipReview.id, membershipReviewNote.trim())
-        success(`${membershipReview.fullName}'s application has been rejected.`)
+        success(`Đã từ chối đơn của ${membershipReview.fullName}.`)
       }
       setMembershipReview(null)
       await Promise.all([loadData(), refreshClubAccess?.()])
     } catch (err) {
-      error(err.message || 'Unable to review the membership application.')
+      error(err.message || 'Không thể xét duyệt đơn tham gia câu lạc bộ.')
     } finally {
       setIsSubmitting(false)
     }
@@ -466,11 +466,11 @@ export default function ClubsPage() {
       setClubs(current => current.filter(club => club.id !== clubToDelete.id))
       setMemberships(current => current.filter(item => item.clubId !== clubToDelete.id))
       setPendingMemberReviews(current => current.filter(item => item.clubId !== clubToDelete.id))
-      success(`${clubToDelete.name} has been deleted.`)
+      success(`Đã xóa câu lạc bộ ${clubToDelete.name}.`)
       setClubToDelete(null)
       await refreshClubAccess?.()
     } catch (err) {
-      error(err.message || 'Unable to delete this club.')
+      error(err.message || 'Không thể xóa câu lạc bộ này.')
     } finally {
       setIsSubmitting(false)
     }
@@ -514,14 +514,14 @@ export default function ClubsPage() {
     event.preventDefault()
     if (isSubmitting) return
     if (!/^[1-9][0-9]{0,2}$/.test(clubForm.activityFrequencyCount)) {
-      error('The activity frequency must be a number from 1 to 999.')
+      error('Tần suất hoạt động phải là một số từ 1 đến 999.')
       return
     }
     if (!clubForm.foundingMembersCommitted
       || !clubForm.committedToRules
       || !clubForm.committedToResponsibility
       || !clubForm.committedToReporting) {
-      error('You must accept all commitments before submitting the application.')
+      error('Bạn phải đồng ý với tất cả cam kết trước khi gửi đơn.')
       return
     }
 
@@ -548,16 +548,16 @@ export default function ClubsPage() {
       }
       if (editingApplication) {
         await api.updateClubApplication(editingApplication.id, payload)
-        success('The club creation application has been updated and resubmitted.')
+        success('Đã cập nhật và gửi lại đơn thành lập câu lạc bộ.')
       } else {
         await api.createClubApplication(payload)
-        success('The club creation application has been submitted for administrator review.')
+        success('Đơn thành lập câu lạc bộ đã được gửi đến quản trị viên để xét duyệt.')
       }
       setCreationModalOpen(false)
       setEditingApplication(null)
       await loadData()
     } catch (err) {
-      error(err.message || 'Unable to submit the club creation application.')
+      error(err.message || 'Không thể gửi đơn thành lập câu lạc bộ.')
     } finally {
       setIsSubmitting(false)
     }
@@ -581,18 +581,18 @@ export default function ClubsPage() {
     try {
       if (applicationReviewAction === 'approve') {
         await api.approveClubApplication(applicationReview.id, review)
-        success(`${applicationReview.name} has been approved.`)
+        success(`Đã phê duyệt câu lạc bộ ${applicationReview.name}.`)
       } else if (applicationReviewAction === 'revision') {
         await api.requestClubApplicationRevision(applicationReview.id, review)
-        success('A revision request has been sent to the applicant.')
+        success('Đã gửi yêu cầu chỉnh sửa đến người nộp đơn.')
       } else {
         await api.rejectClubApplication(applicationReview.id, review)
-        success(`The application to create ${applicationReview.name} has been rejected.`)
+        success(`Đã từ chối đơn thành lập ${applicationReview.name}.`)
       }
       setApplicationReview(null)
       await Promise.all([loadData(), refreshClubAccess?.()])
     } catch (err) {
-      error(err.message || 'Unable to review the club creation application.')
+      error(err.message || 'Không thể xét duyệt đơn thành lập câu lạc bộ.')
     } finally {
       setIsSubmitting(false)
     }
@@ -607,11 +607,11 @@ export default function ClubsPage() {
       >
         <div>
           <span className="inline-flex rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">
-            Clubs
+            Câu lạc bộ
           </span>
-          <h2 className="mt-3 text-3xl font-bold text-white">Discover and Join Clubs</h2>
+          <h2 className="mt-3 text-3xl font-bold text-white">Khám phá và tham gia câu lạc bộ</h2>
           <p className="mt-1 max-w-3xl text-sm text-gray-400">
-            Membership access is activated only after club manager approval. You can also apply to create a new club.
+            Quyền thành viên chỉ được kích hoạt sau khi chủ nhiệm câu lạc bộ phê duyệt. Bạn cũng có thể đăng ký thành lập câu lạc bộ mới.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
@@ -621,14 +621,14 @@ export default function ClubsPage() {
               onClick={() => openCreationForm(null)}
               className="rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-3 font-semibold text-white transition hover:shadow-lg hover:shadow-purple-500/20"
             >
-              + Apply to create a club
+              + Đăng ký thành lập câu lạc bộ
             </button>
           )}
           <input
-            aria-label="Search clubs"
+            aria-label="Tìm kiếm câu lạc bộ"
             value={searchQuery}
             onChange={event => setSearchQuery(event.target.value)}
-            placeholder="Search by name, code, or category..."
+            placeholder="Tìm theo tên, mã hoặc lĩnh vực..."
             className="min-w-0 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-500 sm:w-72"
           />
         </div>
@@ -636,10 +636,10 @@ export default function ClubsPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          ['Active clubs', clubs.filter(club => club.isActive).length, 'text-cyan-300'],
-          ['Joined clubs', memberships.filter(item => normalizedStatus(item.status) === 'APPROVED').length, 'text-emerald-300'],
-          ['Pending membership applications', memberships.filter(item => normalizedStatus(item.status) === 'PENDING').length, 'text-amber-300'],
-          ['Pending club creation applications', pendingClubApplications.length, 'text-purple-300'],
+          ['Câu lạc bộ đang hoạt động', clubs.filter(club => club.isActive).length, 'text-cyan-300'],
+          ['Câu lạc bộ đã tham gia', memberships.filter(item => normalizedStatus(item.status) === 'APPROVED').length, 'text-emerald-300'],
+          ['Đơn tham gia đang chờ duyệt', memberships.filter(item => normalizedStatus(item.status) === 'PENDING').length, 'text-amber-300'],
+          ['Đơn thành lập đang chờ duyệt', pendingClubApplications.length, 'text-purple-300'],
         ].map(([label, value, color]) => (
           <div key={label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className={`text-3xl font-bold ${color}`}>{value}</p>
@@ -650,20 +650,20 @@ export default function ClubsPage() {
 
       {canApplyForClub && myApplications.length > 0 && (
         <section className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
-          <h3 className="text-lg font-bold text-white">My Club Creation Applications</h3>
+          <h3 className="text-lg font-bold text-white">Đơn thành lập câu lạc bộ của tôi</h3>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {myApplications.map(application => (
               <div key={application.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h4 className="font-semibold text-white">{application.name}</h4>
-                    <p className="mt-1 text-xs text-gray-500">Submitted: {formatDate(application.submittedAtUtc)}</p>
+                    <p className="mt-1 text-xs text-gray-500">Đã gửi: {formatDate(application.submittedAtUtc)}</p>
                   </div>
                   <StatusBadge status={application.status} />
                 </div>
                 {application.reviewNote && (
                   <p className="mt-3 rounded-lg bg-slate-900 p-3 text-sm text-gray-300">
-                    <span className="font-semibold text-gray-400">Review note:</span> {application.reviewNote}
+                    <span className="font-semibold text-gray-400">Nhận xét:</span> {application.reviewNote}
                   </p>
                 )}
                 {normalizedStatus(application.status) === 'NEEDSREVISION' && (
@@ -672,7 +672,7 @@ export default function ClubsPage() {
                     onClick={() => openCreationForm(application)}
                     className="mt-3 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white"
                   >
-                    Edit and resubmit
+                    Chỉnh sửa và gửi lại
                   </button>
                 )}
               </div>
@@ -683,15 +683,15 @@ export default function ClubsPage() {
 
       {canReviewApplications && pendingClubApplications.length > 0 && (
         <section className="rounded-2xl border border-purple-500/25 bg-purple-500/5 p-5">
-          <h3 className="text-lg font-bold text-white">Club Creation Applications Awaiting Review</h3>
-          <p className="mt-1 text-sm text-gray-400">Review all submitted information before making a decision.</p>
+          <h3 className="text-lg font-bold text-white">Đơn thành lập câu lạc bộ đang chờ duyệt</h3>
+          <p className="mt-1 text-sm text-gray-400">Kiểm tra toàn bộ thông tin đã gửi trước khi đưa ra quyết định.</p>
           <div className="mt-4 space-y-3">
             {pendingClubApplications.map(application => (
               <div
                 key={application.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`View club creation application for ${application.name}`}
+                aria-label={`Xem đơn thành lập câu lạc bộ ${application.name}`}
                 onClick={() => openApplicationReview(application, 'approve')}
                 onKeyDown={event => {
                   if (event.target !== event.currentTarget) return
@@ -710,14 +710,14 @@ export default function ClubsPage() {
                         {CATEGORY_LABELS[application.category] || application.category}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-gray-300">Founder: {application.requesterName} · {application.founderOrganization}</p>
-                    <p className="mt-1 text-sm text-gray-500">Submitted: {formatDate(application.submittedAtUtc)}</p>
-                    <p className="mt-2 text-xs font-semibold text-purple-300">Click to view the full application</p>
+                    <p className="mt-2 text-sm text-gray-300">Người sáng lập: {application.requesterName} · {application.founderOrganization}</p>
+                    <p className="mt-1 text-sm text-gray-500">Đã gửi: {formatDate(application.submittedAtUtc)}</p>
+                    <p className="mt-2 text-xs font-semibold text-purple-300">Nhấn để xem toàn bộ đơn</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={event => { event.stopPropagation(); openApplicationReview(application, 'reject') }} className="rounded-lg border border-rose-500/30 px-3 py-2 text-sm font-semibold text-rose-300">Reject</button>
-                    <button type="button" onClick={event => { event.stopPropagation(); openApplicationReview(application, 'revision') }} className="rounded-lg border border-orange-500/30 px-3 py-2 text-sm font-semibold text-orange-300">Request revision</button>
-                    <button type="button" onClick={event => { event.stopPropagation(); openApplicationReview(application, 'approve') }} className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">Approve</button>
+                    <button type="button" onClick={event => { event.stopPropagation(); openApplicationReview(application, 'reject') }} className="rounded-lg border border-rose-500/30 px-3 py-2 text-sm font-semibold text-rose-300">Từ chối</button>
+                    <button type="button" onClick={event => { event.stopPropagation(); openApplicationReview(application, 'revision') }} className="rounded-lg border border-orange-500/30 px-3 py-2 text-sm font-semibold text-orange-300">Yêu cầu chỉnh sửa</button>
+                    <button type="button" onClick={event => { event.stopPropagation(); openApplicationReview(application, 'approve') }} className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">Phê duyệt</button>
                   </div>
                 </div>
               </div>
@@ -728,14 +728,14 @@ export default function ClubsPage() {
 
       {pendingMemberReviews.length > 0 && (
         <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-          <h3 className="text-lg font-bold text-white">Membership Applications Awaiting Club Manager Review</h3>
+          <h3 className="text-lg font-bold text-white">Đơn xin tham gia đang chờ chủ nhiệm xét duyệt</h3>
           <div className="mt-4 space-y-3">
             {pendingMemberReviews.map(membership => (
               <div
                 key={membership.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`View membership application from ${membership.fullName}`}
+                aria-label={`Xem đơn xin tham gia của ${membership.fullName}`}
                 onClick={() => openMembershipReview(membership)}
                 onKeyDown={event => {
                   if (event.target !== event.currentTarget) return
@@ -750,11 +750,11 @@ export default function ClubsPage() {
                   <h4 className="font-semibold text-white">{membership.fullName}</h4>
                   <p className="mt-1 text-sm text-gray-400">{membership.clubName} · {membership.email} · {membership.phoneNumber}</p>
                   <p className="mt-2 line-clamp-2 text-sm text-gray-300">{membership.reason}</p>
-                  <p className="mt-2 text-xs font-semibold text-emerald-300">Click to view the full application</p>
+                  <p className="mt-2 text-xs font-semibold text-emerald-300">Nhấn để xem toàn bộ đơn</p>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={event => { event.stopPropagation(); openMembershipReview(membership, 'reject') }} className="rounded-lg border border-rose-500/30 px-4 py-2 text-sm font-semibold text-rose-300">Reject</button>
-                  <button type="button" onClick={event => { event.stopPropagation(); openMembershipReview(membership, 'approve') }} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Review and approve</button>
+                  <button type="button" onClick={event => { event.stopPropagation(); openMembershipReview(membership, 'reject') }} className="rounded-lg border border-rose-500/30 px-4 py-2 text-sm font-semibold text-rose-300">Từ chối</button>
+                  <button type="button" onClick={event => { event.stopPropagation(); openMembershipReview(membership, 'approve') }} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Xem và phê duyệt</button>
                 </div>
               </div>
             ))}
@@ -768,7 +768,7 @@ export default function ClubsPage() {
         </div>
       ) : filteredClubs.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">
-          No matching clubs.
+          Không tìm thấy câu lạc bộ phù hợp.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -800,14 +800,14 @@ export default function ClubsPage() {
                   </div>
                   <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">{club.code}</p>
                   <h3 className="mt-1 text-xl font-bold text-white">{club.name}</h3>
-                  <p className="mt-1 text-xs font-semibold text-purple-300">{CATEGORY_LABELS[club.category] || 'Other'}</p>
-                  <p className="mt-3 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-gray-400">{club.description || 'No description provided.'}</p>
+                  <p className="mt-1 text-xs font-semibold text-purple-300">{CATEGORY_LABELS[club.category] || 'Khác'}</p>
+                  <p className="mt-3 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-gray-400">{club.description || 'Chưa có mô tả.'}</p>
                   <dl className="mt-5 space-y-2 border-t border-slate-800 pt-4 text-sm">
-                    <div className="flex justify-between"><dt className="text-gray-500">Members</dt><dd className="font-semibold text-white">{approvedMemberCount}</dd></div>
-                    <div className="flex justify-between gap-3"><dt className="text-gray-500">Contact</dt><dd className="truncate text-gray-300">{club.contactEmail}</dd></div>
+                    <div className="flex justify-between"><dt className="text-gray-500">Thành viên</dt><dd className="font-semibold text-white">{approvedMemberCount}</dd></div>
+                    <div className="flex justify-between gap-3"><dt className="text-gray-500">Liên hệ</dt><dd className="truncate text-gray-300">{club.contactEmail}</dd></div>
                   </dl>
                   {status === 'REJECTED' && membership?.reviewNote && (
-                    <p className="mt-4 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-sm text-rose-200">Reason: {membership.reviewNote}</p>
+                    <p className="mt-4 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-sm text-rose-200">Lý do: {membership.reviewNote}</p>
                   )}
                 </div>
                 <div className="border-t border-slate-800 bg-black/20 p-4">
@@ -817,7 +817,7 @@ export default function ClubsPage() {
                         to={`/clubs/${club.id}/members`}
                         className="w-full rounded-xl bg-cyan-500/15 px-4 py-3 text-center font-semibold text-cyan-300 transition hover:bg-cyan-500/25"
                       >
-                        Manage members
+                        Quản lý thành viên
                       </Link>
                       {canDeleteClubs && (
                         <button
@@ -825,20 +825,20 @@ export default function ClubsPage() {
                           onClick={() => setClubToDelete(club)}
                           className="w-full rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 font-semibold text-rose-300 transition hover:bg-rose-500/20"
                         >
-                          Delete club
+                          Xóa câu lạc bộ
                         </button>
                       )}
                     </div>
                   ) : status === 'APPROVED' ? (
-                    <p className="text-center text-sm font-semibold text-emerald-300">Membership is active</p>
+                    <p className="text-center text-sm font-semibold text-emerald-300">Tư cách thành viên đang hoạt động</p>
                   ) : status === 'PENDING' ? (
-                    <p className="text-center text-sm font-semibold text-amber-300">Application is awaiting club manager review</p>
+                    <p className="text-center text-sm font-semibold text-amber-300">Đơn đang chờ chủ nhiệm câu lạc bộ xét duyệt</p>
                   ) : canJoinClub ? (
                     <button type="button" onClick={() => openJoinForm(club)} className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-3 font-semibold text-white">
-                      {status === 'REJECTED' ? 'Resubmit application' : 'Apply to join'}
+                      {status === 'REJECTED' ? 'Gửi lại đơn' : 'Đăng ký tham gia'}
                     </button>
                   ) : (
-                    <p className="text-center text-sm text-gray-500">This account cannot submit membership applications</p>
+                    <p className="text-center text-sm text-gray-500">Tài khoản này không thể gửi đơn xin tham gia</p>
                   )}
                 </div>
               </motion.article>
@@ -847,35 +847,35 @@ export default function ClubsPage() {
         </div>
       )}
 
-      <Modal isOpen={Boolean(selectedClub)} onClose={closeJoinForm} title={selectedClub ? `Apply to Join ${selectedClub.name}` : 'Club Membership Application'} size="xl">
+      <Modal isOpen={Boolean(selectedClub)} onClose={closeJoinForm} title={selectedClub ? `Đăng ký tham gia ${selectedClub.name}` : 'Đơn xin tham gia câu lạc bộ'} size="xl">
         <form onSubmit={submitJoinRequest} className="space-y-6">
           <p className="rounded-lg bg-cyan-50 p-3 text-sm text-cyan-900">
-            Submitting an application does not grant membership. Access is activated only after the club manager approves it.
+            Việc gửi đơn chưa đồng nghĩa với việc trở thành thành viên. Quyền truy cập chỉ được kích hoạt sau khi chủ nhiệm câu lạc bộ phê duyệt.
           </p>
           <section className="space-y-4">
-            <SectionTitle number="1" title="Personal Information" />
+            <SectionTitle number="1" title="Thông tin cá nhân" />
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Full name" required><TextInput value={joinForm.fullName} onChange={value => updateJoinField('fullName', value)} required maxLength={200} /></Field>
-              <Field label="Date of birth" required><TextInput type="date" value={joinForm.dateOfBirth} onChange={value => updateJoinField('dateOfBirth', value)} required /></Field>
-              <Field label="Gender" required>
+              <Field label="Họ và tên" required><TextInput value={joinForm.fullName} onChange={value => updateJoinField('fullName', value)} required maxLength={200} /></Field>
+              <Field label="Ngày sinh" required><TextInput type="date" value={joinForm.dateOfBirth} onChange={value => updateJoinField('dateOfBirth', value)} required /></Field>
+              <Field label="Giới tính" required>
                 <select value={joinForm.gender} onChange={event => updateJoinField('gender', event.target.value)} required className={inputClass}>
-                  <option value="">Select gender</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option>
+                  <option value="">Chọn giới tính</option><option value="MALE">Nam</option><option value="FEMALE">Nữ</option><option value="OTHER">Khác</option>
                 </select>
               </Field>
-              <Field label="Email" required><TextInput type="email" value={joinForm.email} onChange={value => updateJoinField('email', value)} required maxLength={255} /></Field>
-              <Field label="Phone number" required><TextInput type="tel" value={joinForm.phoneNumber} onChange={value => updateJoinField('phoneNumber', value)} required placeholder="0912345678" /></Field>
-              <Field label="Address"><TextInput value={joinForm.address} onChange={value => updateJoinField('address', value)} maxLength={500} /></Field>
+              <Field label="Thư điện tử" required><TextInput type="email" value={joinForm.email} onChange={value => updateJoinField('email', value)} required maxLength={255} /></Field>
+              <Field label="Số điện thoại" required><TextInput type="tel" value={joinForm.phoneNumber} onChange={value => updateJoinField('phoneNumber', value)} required placeholder="0912345678" /></Field>
+              <Field label="Địa chỉ"><TextInput value={joinForm.address} onChange={value => updateJoinField('address', value)} maxLength={500} /></Field>
             </div>
           </section>
 
           <section className="space-y-4">
-            <SectionTitle number="2" title="Commitments" />
-            <Checkbox checked={joinForm.acceptedClubRules} onChange={value => updateJoinField('acceptedClubRules', value)} required>I have read and agree to follow the club rules</Checkbox>
-            <Checkbox checked={joinForm.committedToParticipate} onChange={value => updateJoinField('committedToParticipate', value)} required>I commit to participating fully in club activities</Checkbox>
+            <SectionTitle number="2" title="Cam kết tham gia" />
+            <Checkbox checked={joinForm.acceptedClubRules} onChange={value => updateJoinField('acceptedClubRules', value)} required>Tôi đã đọc và đồng ý tuân thủ nội quy câu lạc bộ</Checkbox>
+            <Checkbox checked={joinForm.committedToParticipate} onChange={value => updateJoinField('committedToParticipate', value)} required>Tôi cam kết tham gia đầy đủ các hoạt động của câu lạc bộ</Checkbox>
           </section>
 
           <section className="space-y-4">
-            <SectionTitle number="3" title="Additional Information" description={`Fields for the ${CATEGORY_LABELS[selectedClub?.category] || 'Other'} category`} />
+            <SectionTitle number="3" title="Thông tin bổ sung" description={`Thông tin dành cho lĩnh vực ${CATEGORY_LABELS[selectedClub?.category] || 'Khác'}`} />
             <div className="grid gap-4 md:grid-cols-2">
               {(CATEGORY_FIELDS[selectedClub?.category] || CATEGORY_FIELDS.OTHER).map(([key, label]) => (
                 <Field key={key} label={label}>
@@ -886,81 +886,81 @@ export default function ClubsPage() {
           </section>
 
           <section className="space-y-4">
-            <SectionTitle number="4" title="General Questions" />
+            <SectionTitle number="4" title="Câu hỏi chung" />
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Your interests"><TextArea value={joinForm.hobbies} onChange={value => updateJoinField('hobbies', value)} /></Field>
-              <Field label="Key skills"><TextArea value={joinForm.skills} onChange={value => updateJoinField('skills', value)} /></Field>
-              <Field label="Reason for joining" required><TextArea value={joinForm.reason} onChange={value => updateJoinField('reason', value)} required /></Field>
-              <Field label="What do you expect from the club?"><TextArea value={joinForm.expectations} onChange={value => updateJoinField('expectations', value)} /></Field>
-              <Field label="What can you contribute to the club?"><TextArea value={joinForm.contributions} onChange={value => updateJoinField('contributions', value)} /></Field>
-              <Field label="Additional message"><TextArea value={joinForm.message} onChange={value => updateJoinField('message', value)} /></Field>
+              <Field label="Sở thích của bạn"><TextArea value={joinForm.hobbies} onChange={value => updateJoinField('hobbies', value)} /></Field>
+              <Field label="Kỹ năng nổi bật"><TextArea value={joinForm.skills} onChange={value => updateJoinField('skills', value)} /></Field>
+              <Field label="Lý do tham gia" required><TextArea value={joinForm.reason} onChange={value => updateJoinField('reason', value)} required /></Field>
+              <Field label="Bạn mong đợi điều gì từ câu lạc bộ?"><TextArea value={joinForm.expectations} onChange={value => updateJoinField('expectations', value)} /></Field>
+              <Field label="Bạn có thể đóng góp gì cho câu lạc bộ?"><TextArea value={joinForm.contributions} onChange={value => updateJoinField('contributions', value)} /></Field>
+              <Field label="Lời nhắn bổ sung"><TextArea value={joinForm.message} onChange={value => updateJoinField('message', value)} /></Field>
             </div>
           </section>
           <div className="sticky -bottom-6 z-10 -mx-6 flex gap-3 border-t border-neutral-200 bg-white px-6 py-4 shadow-[0_-12px_24px_rgba(15,23,42,0.08)]">
-            <button type="button" onClick={closeJoinForm} disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Submitting...' : 'Submit application'}</button>
+            <button type="button" onClick={closeJoinForm} disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button>
+            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Đang gửi...' : 'Gửi đơn'}</button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={creationModalOpen} onClose={() => !isSubmitting && setCreationModalOpen(false)} title={editingApplication ? 'Edit Club Creation Application' : 'Club Creation Application'} size="xl">
+      <Modal isOpen={creationModalOpen} onClose={() => !isSubmitting && setCreationModalOpen(false)} title={editingApplication ? 'Chỉnh sửa đơn thành lập câu lạc bộ' : 'Đơn thành lập câu lạc bộ'} size="xl">
         <form onSubmit={submitClubApplication} className="space-y-7">
           <section className="space-y-4">
-            <SectionTitle number="1" title="Proposed Club Information" />
+            <SectionTitle number="1" title="Thông tin câu lạc bộ đề xuất" />
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Proposed club name" required><TextInput value={clubForm.name} onChange={value => updateClubForm('name', value)} required maxLength={200} /></Field>
-              <Field label="Activity category" required>
+              <Field label="Tên câu lạc bộ đề xuất" required><TextInput value={clubForm.name} onChange={value => updateClubForm('name', value)} required maxLength={200} /></Field>
+              <Field label="Lĩnh vực hoạt động" required>
                 <select value={clubForm.category} onChange={event => updateClubForm('category', event.target.value)} required className={inputClass}>
                   {Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </Field>
-              <Field label="Abbreviation (optional)"><TextInput value={clubForm.code} onChange={value => updateClubForm('code', value.toUpperCase())} maxLength={20} placeholder="Leave blank to generate automatically" /></Field>
-              <Field label="Logo/icon (optional URL)"><TextInput type="url" value={clubForm.logoUrl} onChange={value => updateClubForm('logoUrl', value)} maxLength={1000} /></Field>
+              <Field label="Tên viết tắt (không bắt buộc)"><TextInput value={clubForm.code} onChange={value => updateClubForm('code', value.toUpperCase())} maxLength={20} placeholder="Để trống để hệ thống tự tạo" /></Field>
+              <Field label="Logo/biểu tượng (URL không bắt buộc)"><TextInput type="url" value={clubForm.logoUrl} onChange={value => updateClubForm('logoUrl', value)} maxLength={1000} /></Field>
             </div>
-            <Field label="Objectives" required><TextArea value={clubForm.purpose} onChange={value => updateClubForm('purpose', value)} required /></Field>
-            <Field label="Brief club description" required><TextArea value={clubForm.description} onChange={value => updateClubForm('description', value)} required /></Field>
+            <Field label="Mục tiêu" required><TextArea value={clubForm.purpose} onChange={value => updateClubForm('purpose', value)} required /></Field>
+            <Field label="Mô tả ngắn về câu lạc bộ" required><TextArea value={clubForm.description} onChange={value => updateClubForm('description', value)} required /></Field>
           </section>
 
           <section className="space-y-4">
-            <SectionTitle number="2" title="Founder / Club President Information" />
+            <SectionTitle number="2" title="Thông tin người sáng lập / chủ nhiệm câu lạc bộ" />
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Full name" required><TextInput value={clubForm.founderFullName} onChange={value => updateClubForm('founderFullName', value)} required /></Field>
-              <Field label="Proposed role" required><TextInput value={clubForm.founderRole} onChange={value => updateClubForm('founderRole', value)} required /></Field>
-              <Field label="Email" required><TextInput type="email" value={clubForm.founderEmail} onChange={value => updateClubForm('founderEmail', value)} required /></Field>
-              <Field label="Phone number" required><TextInput type="tel" value={clubForm.founderPhone} onChange={value => updateClubForm('founderPhone', value)} required /></Field>
-              <Field label="Class / Faculty / Department" required><TextInput value={clubForm.founderOrganization} onChange={value => updateClubForm('founderOrganization', value)} required /></Field>
+              <Field label="Họ và tên" required><TextInput value={clubForm.founderFullName} onChange={value => updateClubForm('founderFullName', value)} required /></Field>
+              <Field label="Vai trò đề xuất" required><TextInput value={clubForm.founderRole} onChange={value => updateClubForm('founderRole', value)} required /></Field>
+              <Field label="Thư điện tử" required><TextInput type="email" value={clubForm.founderEmail} onChange={value => updateClubForm('founderEmail', value)} required /></Field>
+              <Field label="Số điện thoại" required><TextInput type="tel" value={clubForm.founderPhone} onChange={value => updateClubForm('founderPhone', value)} required /></Field>
+              <Field label="Lớp / Khoa / Phòng ban" required><TextInput value={clubForm.founderOrganization} onChange={value => updateClubForm('founderOrganization', value)} required /></Field>
             </div>
           </section>
 
           <section className="space-y-4">
             <div className="flex items-end justify-between gap-3">
-              <SectionTitle number="3" title="Founding Members" />
-              <button type="button" onClick={addFoundingMember} className="rounded-lg bg-cyan-600 px-3 py-2 text-sm font-semibold text-white">+ Add member</button>
+              <SectionTitle number="3" title="Thành viên sáng lập" />
+              <button type="button" onClick={addFoundingMember} className="rounded-lg bg-cyan-600 px-3 py-2 text-sm font-semibold text-white">+ Thêm thành viên</button>
             </div>
-            <Field label="Number of founding members" required><input type="number" min="1" max="200" value={clubForm.foundingMemberCount} onChange={event => updateClubForm('foundingMemberCount', Number(event.target.value))} required className={inputClass} /></Field>
+            <Field label="Số thành viên sáng lập" required><input type="number" min="1" max="200" value={clubForm.foundingMemberCount} onChange={event => updateClubForm('foundingMemberCount', Number(event.target.value))} required className={inputClass} /></Field>
             <div className="space-y-3">
               {clubForm.foundingMembers.map((member, index) => (
                 <div key={`${index}-${member.email}`} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="font-semibold text-neutral-800">Member #{index + 1}</p>
-                    {clubForm.foundingMembers.length > 1 && <button type="button" onClick={() => removeFoundingMember(index)} className="text-sm font-semibold text-rose-600">Remove</button>}
+                    <p className="font-semibold text-neutral-800">Thành viên #{index + 1}</p>
+                    {clubForm.foundingMembers.length > 1 && <button type="button" onClick={() => removeFoundingMember(index)} className="text-sm font-semibold text-rose-600">Xóa</button>}
                   </div>
                   <div className="grid gap-3 md:grid-cols-3">
-                    <TextInput value={member.fullName} onChange={value => updateFoundingMember(index, 'fullName', value)} required placeholder="Full name" ariaLabel={`Founding member ${index + 1} full name`} />
-                    <TextInput value={member.organization} onChange={value => updateFoundingMember(index, 'organization', value)} required placeholder="Class/Faculty" ariaLabel={`Founding member ${index + 1} class or faculty`} />
-                    <TextInput type="email" value={member.email} onChange={value => updateFoundingMember(index, 'email', value)} required placeholder="Email" ariaLabel={`Founding member ${index + 1} email`} />
+                    <TextInput value={member.fullName} onChange={value => updateFoundingMember(index, 'fullName', value)} required placeholder="Họ và tên" ariaLabel={`Họ và tên thành viên sáng lập ${index + 1}`} />
+                    <TextInput value={member.organization} onChange={value => updateFoundingMember(index, 'organization', value)} required placeholder="Lớp/Khoa" ariaLabel={`Lớp hoặc khoa của thành viên sáng lập ${index + 1}`} />
+                    <TextInput type="email" value={member.email} onChange={value => updateFoundingMember(index, 'email', value)} required placeholder="Thư điện tử" ariaLabel={`Thư điện tử của thành viên sáng lập ${index + 1}`} />
                   </div>
                 </div>
               ))}
             </div>
-            <Checkbox checked={clubForm.foundingMembersCommitted} onChange={value => updateClubForm('foundingMembersCommitted', value)} required>The founding members have agreed and committed to participate</Checkbox>
+            <Checkbox checked={clubForm.foundingMembersCommitted} onChange={value => updateClubForm('foundingMembersCommitted', value)} required>Các thành viên sáng lập đã đồng ý và cam kết tham gia</Checkbox>
           </section>
 
           <section className="space-y-4">
-            <SectionTitle number="4" title="Activity Plan" />
-            <Field label="Planned core activities" required><TextArea value={clubForm.mainActivities} onChange={value => updateClubForm('mainActivities', value)} required rows={4} maxLength={2000} /></Field>
+            <SectionTitle number="4" title="Kế hoạch hoạt động" />
+            <Field label="Các hoạt động chính dự kiến" required><TextArea value={clubForm.mainActivities} onChange={value => updateClubForm('mainActivities', value)} required rows={4} maxLength={2000} /></Field>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Activity frequency" required>
+              <Field label="Tần suất hoạt động" required>
                 <div className="grid grid-cols-[minmax(0,1fr)_130px] gap-2">
                   <input
                     type="text"
@@ -973,14 +973,14 @@ export default function ClubsPage() {
                       event.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 3),
                     )}
                     required
-                    aria-label="Number of activities"
-                    placeholder="Count"
+                    aria-label="Số lần hoạt động"
+                    placeholder="Số lần"
                     className={inputClass}
                   />
                   <select
                     value={clubForm.activityFrequencyUnit}
                     onChange={event => updateClubForm('activityFrequencyUnit', event.target.value)}
-                    aria-label="Frequency unit"
+                    aria-label="Đơn vị tần suất"
                     className={inputClass}
                   >
                     {Object.entries(ACTIVITY_FREQUENCY_UNITS).map(([value, label]) => (
@@ -989,57 +989,57 @@ export default function ClubsPage() {
                   </select>
                 </div>
               </Field>
-              <Field label="Proposed location"><TextInput value={clubForm.expectedLocation} onChange={value => updateClubForm('expectedLocation', value)} /></Field>
-              <Field label="Proposed schedule"><TextInput value={clubForm.expectedSchedule} onChange={value => updateClubForm('expectedSchedule', value)} placeholder="Time slot/day" /></Field>
-              <Field label="Planned major events"><TextArea value={clubForm.majorEvents} onChange={value => updateClubForm('majorEvents', value)} /></Field>
+              <Field label="Địa điểm đề xuất"><TextInput value={clubForm.expectedLocation} onChange={value => updateClubForm('expectedLocation', value)} /></Field>
+              <Field label="Lịch dự kiến"><TextInput value={clubForm.expectedSchedule} onChange={value => updateClubForm('expectedSchedule', value)} placeholder="Khung giờ/ngày" /></Field>
+              <Field label="Sự kiện lớn dự kiến"><TextArea value={clubForm.majorEvents} onChange={value => updateClubForm('majorEvents', value)} /></Field>
             </div>
           </section>
 
           <section className="space-y-4">
-            <SectionTitle number="5" title="Required Resources" />
+            <SectionTitle number="5" title="Nguồn lực cần thiết" />
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Meeting room / venue">
-                <select value={clubForm.venueSupport} onChange={event => updateClubForm('venueSupport', event.target.value)} className={inputClass}><option value="SUPPORT_NEEDED">Support needed</option><option value="SELF_MANAGED">Self-managed</option></select>
+              <Field label="Phòng họp / địa điểm">
+                <select value={clubForm.venueSupport} onChange={event => updateClubForm('venueSupport', event.target.value)} className={inputClass}><option value="SUPPORT_NEEDED">Cần hỗ trợ</option><option value="SELF_MANAGED">Tự quản lý</option></select>
               </Field>
-              <Field label="Funding">
-                <select value={clubForm.fundingSupport} onChange={event => updateClubForm('fundingSupport', event.target.value)} className={inputClass}><option value="SUPPORT_NEEDED">Support needed</option><option value="SELF_FUNDED">Self-funded</option><option value="COMBINED">Combined</option></select>
+              <Field label="Kinh phí">
+                <select value={clubForm.fundingSupport} onChange={event => updateClubForm('fundingSupport', event.target.value)} className={inputClass}><option value="SUPPORT_NEEDED">Cần hỗ trợ</option><option value="SELF_FUNDED">Tự tài trợ</option><option value="COMBINED">Kết hợp</option></select>
               </Field>
-              <Field label="Required equipment"><TextArea value={clubForm.equipmentNeeds} onChange={value => updateClubForm('equipmentNeeds', value)} /></Field>
-              <Checkbox checked={clubForm.advisorNeeded} onChange={value => updateClubForm('advisorNeeded', value)}>Advisor or mentor needed</Checkbox>
+              <Field label="Thiết bị cần thiết"><TextArea value={clubForm.equipmentNeeds} onChange={value => updateClubForm('equipmentNeeds', value)} /></Field>
+              <Checkbox checked={clubForm.advisorNeeded} onChange={value => updateClubForm('advisorNeeded', value)}>Cần cố vấn hoặc người hướng dẫn</Checkbox>
             </div>
           </section>
 
           <section className="space-y-3">
-            <SectionTitle number="6" title="Commitments" />
-            <Checkbox checked={clubForm.committedToRules} onChange={value => updateClubForm('committedToRules', value)} required>Ensure all activities comply with applicable rules and regulations</Checkbox>
-            <Checkbox checked={clubForm.committedToResponsibility} onChange={value => updateClubForm('committedToResponsibility', value)} required>Accept responsibility before the administration</Checkbox>
-            <Checkbox checked={clubForm.committedToReporting} onChange={value => updateClubForm('committedToReporting', value)} required>Submit periodic activity reports</Checkbox>
+            <SectionTitle number="6" title="Cam kết" />
+            <Checkbox checked={clubForm.committedToRules} onChange={value => updateClubForm('committedToRules', value)} required>Đảm bảo mọi hoạt động tuân thủ quy định hiện hành</Checkbox>
+            <Checkbox checked={clubForm.committedToResponsibility} onChange={value => updateClubForm('committedToResponsibility', value)} required>Chịu trách nhiệm trước ban quản trị</Checkbox>
+            <Checkbox checked={clubForm.committedToReporting} onChange={value => updateClubForm('committedToReporting', value)} required>Nộp báo cáo hoạt động định kỳ</Checkbox>
           </section>
           <div className="sticky -bottom-6 z-10 -mx-6 flex gap-3 border-t border-neutral-200 bg-white px-6 py-4 shadow-[0_-12px_24px_rgba(15,23,42,0.08)]">
-            <button type="button" onClick={() => setCreationModalOpen(false)} disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Submitting...' : editingApplication ? 'Resubmit application' : 'Submit creation application'}</button>
+            <button type="button" onClick={() => setCreationModalOpen(false)} disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button>
+            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Đang gửi...' : editingApplication ? 'Gửi lại đơn' : 'Gửi đơn thành lập'}</button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(membershipReview)} onClose={() => !isSubmitting && setMembershipReview(null)} title={membershipReviewAction === 'approve' ? 'Review Membership Application' : 'Reject Membership Application'} size="lg">
+      <Modal isOpen={Boolean(membershipReview)} onClose={() => !isSubmitting && setMembershipReview(null)} title={membershipReviewAction === 'approve' ? 'Xét duyệt đơn tham gia' : 'Từ chối đơn tham gia'} size="lg">
         <form onSubmit={submitMembershipReview} className="space-y-5">
           {membershipReview && (
             <div className="grid gap-4 rounded-xl bg-neutral-50 p-4 md:grid-cols-2">
-              <Detail label="Full name" value={membershipReview.fullName} />
-              <Detail label="Date of birth" value={membershipReview.dateOfBirth} />
-              <Detail label="Gender" value={GENDER_LABELS[membershipReview.gender] || membershipReview.gender} />
-              <Detail label="Email" value={membershipReview.email} />
-              <Detail label="Phone number" value={membershipReview.phoneNumber} />
-              <Detail label="Address" value={membershipReview.address} />
-              <Detail label="Interests" value={membershipReview.hobbies} />
-              <Detail label="Skills" value={membershipReview.skills} />
-              <Detail label="Reason for joining" value={membershipReview.reason} />
-              <Detail label="Expectations" value={membershipReview.expectations} />
-              <Detail label="Potential contributions" value={membershipReview.contributions} />
-              <Detail label="Additional message" value={membershipReview.requestMessage} />
-              <Detail label="Club rules commitment" value={membershipReview.acceptedClubRules ? 'Confirmed' : 'Not confirmed'} />
-              <Detail label="Activity participation commitment" value={membershipReview.committedToParticipate ? 'Confirmed' : 'Not confirmed'} />
+              <Detail label="Họ và tên" value={membershipReview.fullName} />
+              <Detail label="Ngày sinh" value={membershipReview.dateOfBirth} />
+              <Detail label="Giới tính" value={GENDER_LABELS[membershipReview.gender] || 'Không xác định'} />
+              <Detail label="Thư điện tử" value={membershipReview.email} />
+              <Detail label="Số điện thoại" value={membershipReview.phoneNumber} />
+              <Detail label="Địa chỉ" value={membershipReview.address} />
+              <Detail label="Sở thích" value={membershipReview.hobbies} />
+              <Detail label="Kỹ năng" value={membershipReview.skills} />
+              <Detail label="Lý do tham gia" value={membershipReview.reason} />
+              <Detail label="Mong đợi" value={membershipReview.expectations} />
+              <Detail label="Khả năng đóng góp" value={membershipReview.contributions} />
+              <Detail label="Lời nhắn bổ sung" value={membershipReview.requestMessage} />
+              <Detail label="Cam kết tuân thủ nội quy" value={membershipReview.acceptedClubRules ? 'Đã xác nhận' : 'Chưa xác nhận'} />
+              <Detail label="Cam kết tham gia hoạt động" value={membershipReview.committedToParticipate ? 'Đã xác nhận' : 'Chưa xác nhận'} />
               {Object.entries(membershipReview.additionalInfo || {}).map(([key, value]) => (
                 <Detail
                   key={key}
@@ -1049,44 +1049,44 @@ export default function ClubsPage() {
               ))}
             </div>
           )}
-          <Field label={membershipReviewAction === 'reject' ? 'Rejection reason' : 'Review note'} required={membershipReviewAction === 'reject'}>
+          <Field label={membershipReviewAction === 'reject' ? 'Lý do từ chối' : 'Nhận xét xét duyệt'} required={membershipReviewAction === 'reject'}>
             <TextArea value={membershipReviewNote} onChange={setMembershipReviewNote} required={membershipReviewAction === 'reject'} />
           </Field>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setMembershipReview(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white ${membershipReviewAction === 'approve' ? 'bg-emerald-600' : 'bg-rose-600'}`}>{isSubmitting ? 'Processing...' : 'Confirm'}</button>
+            <button type="button" onClick={() => setMembershipReview(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button>
+            <button type="submit" disabled={isSubmitting} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white ${membershipReviewAction === 'approve' ? 'bg-emerald-600' : 'bg-rose-600'}`}>{isSubmitting ? 'Đang xử lý...' : 'Xác nhận'}</button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(applicationReview)} onClose={() => !isSubmitting && setApplicationReview(null)} title="Administration Review" size="xl">
+      <Modal isOpen={Boolean(applicationReview)} onClose={() => !isSubmitting && setApplicationReview(null)} title="Xét duyệt của quản trị viên" size="xl">
         <form onSubmit={submitApplicationReview} className="space-y-6">
           {applicationReview && (
             <div className="space-y-5">
               <div className="grid gap-4 rounded-xl bg-neutral-50 p-4 md:grid-cols-3">
-                <Detail label="Club name" value={applicationReview.name} />
-                <Detail label="Category" value={CATEGORY_LABELS[applicationReview.category] || applicationReview.category} />
-                <Detail label="Submitted" value={formatDate(applicationReview.submittedAtUtc)} />
-                <Detail label="Club code" value={applicationReview.code} />
-                <Detail label="Logo/icon" value={applicationReview.logoUrl} />
-                <Detail label="Objectives" value={applicationReview.purpose} />
-                <Detail label="Description" value={applicationReview.description} />
-                <Detail label="Founder" value={`${applicationReview.requesterName} – ${applicationReview.founderRole}`} />
-                <Detail label="Contact" value={`${applicationReview.contactEmail} · ${applicationReview.contactPhone}`} />
-                <Detail label="Organization" value={applicationReview.founderOrganization} />
-                <Detail label="Founding members" value={applicationReview.foundingMemberCount} />
-                <Detail label="Core activities" value={applicationReview.mainActivities} />
-                <Detail label="Frequency" value={applicationReview.activityFrequency} />
-                <Detail label="Location/schedule" value={`${applicationReview.expectedLocation || '—'} · ${applicationReview.expectedSchedule || '—'}`} />
-                <Detail label="Major events" value={applicationReview.majorEvents} />
-                <Detail label="Meeting room / venue" value={VENUE_SUPPORT_LABELS[applicationReview.venueSupport] || applicationReview.venueSupport} />
-                <Detail label="Funding" value={FUNDING_SUPPORT_LABELS[applicationReview.fundingSupport] || applicationReview.fundingSupport} />
-                <Detail label="Equipment" value={applicationReview.equipmentNeeds} />
-                <Detail label="Advisor needed" value={applicationReview.advisorNeeded ? 'Yes' : 'No'} />
+                <Detail label="Tên câu lạc bộ" value={applicationReview.name} />
+                <Detail label="Lĩnh vực" value={CATEGORY_LABELS[applicationReview.category] || 'Khác'} />
+                <Detail label="Ngày gửi" value={formatDate(applicationReview.submittedAtUtc)} />
+                <Detail label="Mã câu lạc bộ" value={applicationReview.code} />
+                <Detail label="Logo/biểu tượng" value={applicationReview.logoUrl} />
+                <Detail label="Mục tiêu" value={applicationReview.purpose} />
+                <Detail label="Mô tả" value={applicationReview.description} />
+                <Detail label="Người sáng lập" value={`${applicationReview.requesterName} – ${applicationReview.founderRole}`} />
+                <Detail label="Liên hệ" value={`${applicationReview.contactEmail} · ${applicationReview.contactPhone}`} />
+                <Detail label="Đơn vị" value={applicationReview.founderOrganization} />
+                <Detail label="Thành viên sáng lập" value={applicationReview.foundingMemberCount} />
+                <Detail label="Hoạt động chính" value={applicationReview.mainActivities} />
+                <Detail label="Tần suất" value={applicationReview.activityFrequency} />
+                <Detail label="Địa điểm/lịch" value={`${applicationReview.expectedLocation || '—'} · ${applicationReview.expectedSchedule || '—'}`} />
+                <Detail label="Sự kiện lớn" value={applicationReview.majorEvents} />
+                <Detail label="Phòng họp / địa điểm" value={VENUE_SUPPORT_LABELS[applicationReview.venueSupport] || 'Không xác định'} />
+                <Detail label="Kinh phí" value={FUNDING_SUPPORT_LABELS[applicationReview.fundingSupport] || 'Không xác định'} />
+                <Detail label="Thiết bị" value={applicationReview.equipmentNeeds} />
+                <Detail label="Cần cố vấn" value={applicationReview.advisorNeeded ? 'Có' : 'Không'} />
               </div>
               <div className="grid gap-5 md:grid-cols-2">
                 <section className="rounded-xl border border-neutral-200 p-4">
-                  <h3 className="font-semibold text-neutral-900">Founding Members</h3>
+                  <h3 className="font-semibold text-neutral-900">Thành viên sáng lập</h3>
                   <div className="mt-3 space-y-2">
                     {(applicationReview.foundingMembers || []).map((member, index) => (
                       <div key={`${member.email}-${index}`} className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
@@ -1096,22 +1096,22 @@ export default function ClubsPage() {
                     ))}
                   </div>
                   <p className="mt-3 text-sm text-neutral-700">
-                    Member commitment: <span className="font-semibold">{applicationReview.foundingMembersCommitted ? 'Confirmed' : 'Not confirmed'}</span>
+                    Cam kết của thành viên: <span className="font-semibold">{applicationReview.foundingMembersCommitted ? 'Đã xác nhận' : 'Chưa xác nhận'}</span>
                   </p>
                 </section>
                 <section className="rounded-xl border border-neutral-200 p-4">
-                  <h3 className="font-semibold text-neutral-900">Founder Commitments</h3>
+                  <h3 className="font-semibold text-neutral-900">Cam kết của người sáng lập</h3>
                   <div className="mt-3 space-y-2 text-sm text-neutral-700">
-                    <p>Comply with rules: <span className="font-semibold">{applicationReview.committedToRules ? 'Confirmed' : 'Not confirmed'}</span></p>
-                    <p>Accept administrative responsibility: <span className="font-semibold">{applicationReview.committedToResponsibility ? 'Confirmed' : 'Not confirmed'}</span></p>
-                    <p>Submit periodic activity reports: <span className="font-semibold">{applicationReview.committedToReporting ? 'Confirmed' : 'Not confirmed'}</span></p>
+                    <p>Tuân thủ quy định: <span className="font-semibold">{applicationReview.committedToRules ? 'Đã xác nhận' : 'Chưa xác nhận'}</span></p>
+                    <p>Chịu trách nhiệm quản lý: <span className="font-semibold">{applicationReview.committedToResponsibility ? 'Đã xác nhận' : 'Chưa xác nhận'}</span></p>
+                    <p>Nộp báo cáo hoạt động định kỳ: <span className="font-semibold">{applicationReview.committedToReporting ? 'Đã xác nhận' : 'Chưa xác nhận'}</span></p>
                   </div>
                 </section>
               </div>
               <div>
-                <p className="mb-2 text-sm font-semibold text-neutral-700">Decision *</p>
+                <p className="mb-2 text-sm font-semibold text-neutral-700">Quyết định *</p>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {[['approve', 'Approve'], ['revision', 'Request revision'], ['reject', 'Reject']].map(([value, label]) => (
+                  {[['approve', 'Phê duyệt'], ['revision', 'Yêu cầu chỉnh sửa'], ['reject', 'Từ chối']].map(([value, label]) => (
                     <label key={value} className={`cursor-pointer rounded-lg border p-3 text-center font-semibold ${applicationReviewAction === value ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-neutral-200 text-neutral-600'}`}>
                       <input type="radio" name="decision" value={value} checked={applicationReviewAction === value} onChange={() => setApplicationReviewAction(value)} className="sr-only" />
                       {label}
@@ -1121,12 +1121,12 @@ export default function ClubsPage() {
               </div>
             </div>
           )}
-          <Field label={applicationReviewAction === 'approve' ? 'Note' : 'Review note / required changes'} required={applicationReviewAction !== 'approve'}><TextArea value={applicationReviewForm.note} onChange={value => setApplicationReviewForm(current => ({ ...current, note: value }))} required={applicationReviewAction !== 'approve'} /></Field>
-          <Field label="Conditions"><TextArea value={applicationReviewForm.conditions} onChange={value => setApplicationReviewForm(current => ({ ...current, conditions: value }))} /></Field>
-          <Field label="Reviewer signature"><TextInput value={applicationReviewForm.reviewerSignature} onChange={value => setApplicationReviewForm(current => ({ ...current, reviewerSignature: value }))} maxLength={200} /></Field>
+          <Field label={applicationReviewAction === 'approve' ? 'Ghi chú' : 'Nhận xét / nội dung cần chỉnh sửa'} required={applicationReviewAction !== 'approve'}><TextArea value={applicationReviewForm.note} onChange={value => setApplicationReviewForm(current => ({ ...current, note: value }))} required={applicationReviewAction !== 'approve'} /></Field>
+          <Field label="Điều kiện"><TextArea value={applicationReviewForm.conditions} onChange={value => setApplicationReviewForm(current => ({ ...current, conditions: value }))} /></Field>
+          <Field label="Chữ ký người xét duyệt"><TextInput value={applicationReviewForm.reviewerSignature} onChange={value => setApplicationReviewForm(current => ({ ...current, reviewerSignature: value }))} maxLength={200} /></Field>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setApplicationReview(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Processing...' : 'Confirm decision'}</button>
+            <button type="button" onClick={() => setApplicationReview(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button>
+            <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Đang xử lý...' : 'Xác nhận quyết định'}</button>
           </div>
         </form>
       </Modal>
@@ -1134,14 +1134,14 @@ export default function ClubsPage() {
       <Modal
         isOpen={Boolean(clubToDelete)}
         onClose={() => !isSubmitting && setClubToDelete(null)}
-        title="Delete Club"
+        title="Xóa câu lạc bộ"
         size="md"
       >
         <div className="space-y-5">
           <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-            <p className="font-semibold">Delete {clubToDelete?.name}?</p>
+            <p className="font-semibold">Xóa {clubToDelete?.name}?</p>
             <p className="mt-2">
-              The club will be deactivated and removed from the active club list. Active manager assignments will also end.
+              Câu lạc bộ sẽ bị vô hiệu hóa và xóa khỏi danh sách đang hoạt động. Các phân công chủ nhiệm hiện tại cũng sẽ kết thúc.
             </p>
           </div>
           <div className="flex gap-3">
@@ -1151,7 +1151,7 @@ export default function ClubsPage() {
               disabled={isSubmitting}
               className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700 disabled:opacity-50"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="button"
@@ -1159,7 +1159,7 @@ export default function ClubsPage() {
               disabled={isSubmitting}
               className="flex-1 rounded-lg bg-rose-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
             >
-              {isSubmitting ? 'Deleting...' : 'Delete club'}
+              {isSubmitting ? 'Đang xóa...' : 'Xóa câu lạc bộ'}
             </button>
           </div>
         </div>

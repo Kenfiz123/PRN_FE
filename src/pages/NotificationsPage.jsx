@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { useNotifications } from '../context/NotificationContext'
 import { useToast } from '../context/ToastContext'
-import { formatDateTime, formatRole } from '../locales/vi'
+import { formatDateTime, formatEventType, formatRole } from '../locales/vi'
 
 const formatDate = value => formatDateTime(value)
 
@@ -161,7 +161,7 @@ export default function NotificationsPage() {
                   </div>
                   <p className="mt-2 text-sm leading-6 text-gray-400">{notification.message}</p>
                   <span className="mt-3 inline-flex rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    {notification.eventType}
+                    {formatEventType(notification.eventType)}
                   </span>
                 </div>
               </div>
@@ -181,7 +181,7 @@ export default function NotificationsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-700">
-                  {selectedNotification.eventType}
+                  {formatEventType(selectedNotification.eventType)}
                 </span>
                 <h4 className="mt-3 text-xl font-bold text-neutral-900">{selectedNotification.title}</h4>
               </div>
@@ -215,7 +215,7 @@ export default function NotificationsPage() {
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Loại sự kiện</dt>
-                <dd className="mt-1 text-sm font-medium text-neutral-800">{selectedNotification.eventType}</dd>
+                <dd className="mt-1 text-sm font-medium text-neutral-800">{formatEventType(selectedNotification.eventType)}</dd>
               </div>
             </dl>
 

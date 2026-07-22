@@ -5,6 +5,7 @@ import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { PERMISSIONS } from '../auth/permissions'
+import { formatSystemText } from '../locales/vi'
 
 const emptyProposal = { clubId: '', activityChoice: '', customTitle: '', description: '', requestedAmount: '' }
 const emptySettlement = { totalSpent: '', receiptUrl: '' }
@@ -14,7 +15,7 @@ function normalizeStatus(status) {
 }
 
 function money(value) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(value) || 0)
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(value) || 0)
 }
 
 function statusClass(status) {
@@ -27,12 +28,12 @@ function statusClass(status) {
 
 function statusLabel(status) {
   const value = normalizeStatus(status)
-  if (value === 'SUBMITTED') return 'Awaiting club owner'
-  if (value === 'MANAGERAPPROVED') return 'Awaiting final approval'
-  if (value === 'APPROVED') return 'Approved'
-  if (value === 'REJECTED') return 'Rejected'
-  if (value === 'SETTLED') return 'Settled'
-  return status || 'Unknown'
+  if (value === 'SUBMITTED') return 'Chờ chủ nhiệm duyệt'
+  if (value === 'MANAGERAPPROVED') return 'Chờ duyệt cuối'
+  if (value === 'APPROVED') return 'Đã duyệt'
+  if (value === 'REJECTED') return 'Đã từ chối'
+  if (value === 'SETTLED') return 'Đã quyết toán'
+  return 'Không xác định'
 }
 
 function isBudgetActivity(activity) {
@@ -95,7 +96,7 @@ export default function FinancePage() {
       setActivities(Array.isArray(activityResult) ? activityResult : [])
       setFutureReports(Array.isArray(reportResult?.items) ? reportResult.items : [])
     } catch (err) {
-      error(err.message || 'Unable to load finance data.')
+      error(err.message || 'Không thể tải dữ liệu tài chính.')
     } finally {
       setIsLoading(false)
     }
@@ -140,7 +141,7 @@ export default function FinancePage() {
       : selectedActivity?.title?.trim() || selectedReport?.details?.[0]?.activityName?.trim()
     const requestedAmount = Number(proposalForm.requestedAmount)
     if (!club || !proposalTitle || (!isOther && !selectedActivity && !selectedReport) || !proposalForm.description.trim() || requestedAmount <= 0) {
-      error('Please select an activity, a future event report, or Other, then provide the required proposal information.')
+      error('Vui lòng chọn hoạt động, báo cáo sự kiện sắp tới hoặc mục Khác, sau đó nhập đầy đủ thông tin đề xuất.')
       return
     }
     setBusyId('create')
@@ -157,10 +158,10 @@ export default function FinancePage() {
       setProposals(current => [created, ...current])
       setShowCreate(false)
       setProposalForm(emptyProposal)
-      success('Budget proposal submitted.')
+      success('Đã gửi đề xuất ngân sách.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Unable to create the budget proposal.')
+      error(err.message || 'Không thể tạo đề xuất ngân sách.')
     } finally {
       setBusyId(null)
     }
@@ -178,12 +179,12 @@ export default function FinancePage() {
     event.preventDefault()
     if (!reviewTarget || busyId) return
     if (reviewAction === 'reject' && !reviewNote.trim()) {
-      error('Please provide a rejection reason.')
+      error('Vui lòng nhập lý do từ chối.')
       return
     }
     const amount = Number(reviewAmount)
     if (reviewStage === 'final' && reviewAction === 'approve' && amount <= 0) {
-      error('The approved amount must be greater than zero.')
+      error('Số tiền được duyệt phải lớn hơn 0.')
       return
     }
     setBusyId(reviewTarget.id)
@@ -201,11 +202,11 @@ export default function FinancePage() {
       setProposals(current => current.map(item => item.id === updated.id ? updated : item))
       setReviewTarget(null)
       success(reviewAction === 'approve'
-        ? reviewStage === 'manager' ? 'Proposal sent for final approval.' : 'Budget approved.'
-        : 'Proposal rejected.')
+        ? reviewStage === 'manager' ? 'Đề xuất đã được chuyển đến bước duyệt cuối.' : 'Ngân sách đã được phê duyệt.'
+        : 'Đề xuất đã bị từ chối.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Unable to review the proposal.')
+      error(err.message || 'Không thể xét duyệt đề xuất.')
     } finally {
       setBusyId(null)
     }
@@ -216,7 +217,7 @@ export default function FinancePage() {
     if (!settlementTarget || busyId) return
     const totalSpent = Number(settlementForm.totalSpent)
     if (totalSpent <= 0 || !settlementForm.receiptUrl.trim()) {
-      error('Please enter an amount and a valid HTTPS receipt URL.')
+      error('Vui lòng nhập số tiền và đường dẫn HTTPS hợp lệ của hóa đơn.')
       return
     }
     setBusyId(settlementTarget.id)
@@ -228,10 +229,10 @@ export default function FinancePage() {
       setProposals(current => current.map(item => item.id === updated.id ? updated : item))
       setSettlementTarget(null)
       setSettlementForm(emptySettlement)
-      success('Settlement submitted.')
+      success('Đã gửi quyết toán.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Unable to submit the settlement.')
+      error(err.message || 'Không thể gửi quyết toán.')
     } finally {
       setBusyId(null)
     }
@@ -242,10 +243,10 @@ export default function FinancePage() {
     setBusyId(`settlement-${settlement.id}`)
     try {
       await api.approveSettlement(settlement.id)
-      success('Settlement approved.')
+      success('Đã phê duyệt quyết toán.')
       await loadFinance()
     } catch (err) {
-      error(err.message || 'Unable to approve the settlement.')
+      error(err.message || 'Không thể phê duyệt quyết toán.')
     } finally {
       setBusyId(null)
     }
@@ -260,22 +261,22 @@ export default function FinancePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Finance</h2>
-          <p className="mt-1 text-sm text-gray-400">Only approved club treasurers can submit proposals and settlements.</p>
+          <h2 className="text-2xl font-bold text-white">Tài chính</h2>
+          <p className="mt-1 text-sm text-gray-400">Chỉ thủ quỹ câu lạc bộ đã được duyệt mới có thể gửi đề xuất và quyết toán.</p>
         </div>
         {treasurerClubs.length > 0 && (
           <button type="button" onClick={() => setShowCreate(true)} className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 font-semibold text-white">
-            Create proposal
+            Tạo đề xuất
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          ['Proposals', proposals.length, 'text-cyan-300'],
-          ['Pending', proposals.filter(item => ['SUBMITTED', 'MANAGERAPPROVED'].includes(normalizeStatus(item.status))).length, 'text-amber-300'],
-          ['Approved budget', money(approvedBudget), 'text-emerald-300'],
-          ['Settled amount', money(spent), 'text-purple-300'],
+          ['Đề xuất', proposals.length, 'text-cyan-300'],
+          ['Đang chờ duyệt', proposals.filter(item => ['SUBMITTED', 'MANAGERAPPROVED'].includes(normalizeStatus(item.status))).length, 'text-amber-300'],
+          ['Ngân sách đã duyệt', money(approvedBudget), 'text-emerald-300'],
+          ['Số tiền đã quyết toán', money(spent), 'text-purple-300'],
         ].map(([label, value, color]) => (
           <div key={label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className={`text-xl font-bold sm:text-2xl ${color}`}>{value}</p>
@@ -284,19 +285,19 @@ export default function FinancePage() {
         ))}
       </div>
 
-      <select aria-label="Filter budget proposals by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white sm:w-auto">
-        <option value="ALL">All statuses</option>
-        <option value="SUBMITTED">Awaiting club owner</option>
-        <option value="MANAGERAPPROVED">Awaiting final approval</option>
-        <option value="APPROVED">Approved</option>
-        <option value="REJECTED">Rejected</option>
-        <option value="SETTLED">Settled</option>
+      <select aria-label="Lọc đề xuất ngân sách theo trạng thái" value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white sm:w-auto">
+        <option value="ALL">Tất cả trạng thái</option>
+        <option value="SUBMITTED">Chờ chủ nhiệm duyệt</option>
+        <option value="MANAGERAPPROVED">Chờ duyệt cuối</option>
+        <option value="APPROVED">Đã duyệt</option>
+        <option value="REJECTED">Đã từ chối</option>
+        <option value="SETTLED">Đã quyết toán</option>
       </select>
 
       {isLoading ? (
         <div className="flex min-h-64 items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-cyan-400" /></div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">No budget proposals yet.</div>
+        <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">Chưa có đề xuất ngân sách.</div>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {filtered.map(proposal => {
@@ -313,40 +314,40 @@ export default function FinancePage() {
                 </div>
                 {proposal.activityId && (
                   <p className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs text-cyan-300">
-                    Linked activity: {linkedActivity?.title || proposal.title} · #{proposal.activityId}
+                    Hoạt động liên kết: {linkedActivity?.title || proposal.title} · #{proposal.activityId}
                   </p>
                 )}
                 {proposal.sourceReportId && (
                   <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2 text-xs text-purple-200">
-                    <span>Combined future event report #{proposal.sourceReportId}</span>
-                    <button type="button" onClick={() => navigate(`/reports/${proposal.sourceReportId}`)} className="font-semibold text-purple-300 hover:text-purple-200">Open report</button>
+                    <span>Báo cáo sự kiện sắp tới kết hợp #{proposal.sourceReportId}</span>
+                    <button type="button" onClick={() => navigate(`/reports/${proposal.sourceReportId}`)} className="font-semibold text-purple-300 hover:text-purple-200">Mở báo cáo</button>
                   </div>
                 )}
-                {!proposal.activityId && !proposal.sourceReportId && <p className="mt-3 text-xs text-gray-500">Custom proposal title</p>}
+                {!proposal.activityId && !proposal.sourceReportId && <p className="mt-3 text-xs text-gray-500">Tên đề xuất tự nhập</p>}
                 <p className="mt-3 text-sm leading-6 text-gray-400">{proposal.description}</p>
                 <dl className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Requested</dt><dd className="mt-1 font-bold text-white">{money(proposal.requestedAmount)}</dd></div>
-                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Approved</dt><dd className="mt-1 font-bold text-emerald-300">{proposal.approvedAmount ? money(proposal.approvedAmount) : '—'}</dd></div>
+                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Đề xuất</dt><dd className="mt-1 font-bold text-white">{money(proposal.requestedAmount)}</dd></div>
+                  <div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs text-gray-500">Đã duyệt</dt><dd className="mt-1 font-bold text-emerald-300">{proposal.approvedAmount ? money(proposal.approvedAmount) : '—'}</dd></div>
                 </dl>
-                {proposal.managerReviewNote && <p className="mt-3 rounded-lg bg-purple-500/5 p-3 text-sm text-purple-200">Club owner: {proposal.managerReviewNote}</p>}
-                {proposal.reviewNote && <p className="mt-3 rounded-lg bg-slate-950/50 p-3 text-sm text-gray-300">Final review: {proposal.reviewNote}</p>}
+                {proposal.managerReviewNote && <p className="mt-3 rounded-lg bg-purple-500/5 p-3 text-sm text-purple-200">Chủ nhiệm: {formatSystemText(proposal.managerReviewNote)}</p>}
+                {proposal.reviewNote && <p className="mt-3 rounded-lg bg-slate-950/50 p-3 text-sm text-gray-300">Xét duyệt cuối: {formatSystemText(proposal.reviewNote)}</p>}
                 {proposal.settlements?.length > 0 && (
                   <div className="mt-4 space-y-2 border-t border-slate-800 pt-4">
                     {proposal.settlements.map(settlement => (
                       <div key={settlement.id} className="flex flex-col gap-2 rounded-lg bg-slate-950/50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div><p className="text-sm font-semibold text-white">Settlement {money(settlement.totalSpent)}</p><p className="text-xs text-gray-500">{settlement.status}</p></div>
+                        <div><p className="text-sm font-semibold text-white">Quyết toán {money(settlement.totalSpent)}</p><p className="text-xs text-gray-500">{statusLabel(settlement.status)}</p></div>
                         {canFinalReview && normalizeStatus(settlement.status) === 'SUBMITTED' && (
-                          <button type="button" onClick={() => approveSettlement(proposal, settlement)} disabled={busyId === `settlement-${settlement.id}`} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-50">Approve settlement</button>
+                          <button type="button" onClick={() => approveSettlement(proposal, settlement)} disabled={busyId === `settlement-${settlement.id}`} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300 disabled:opacity-50">Duyệt quyết toán</button>
                         )}
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {proposal.sourceReportId && ['SUBMITTED', 'MANAGERAPPROVED'].includes(status) && <button type="button" onClick={() => navigate(`/reports/${proposal.sourceReportId}`)} className="rounded-lg bg-purple-500/15 px-3 py-2 text-sm font-semibold text-purple-300">Review combined report</button>}
-                  {!proposal.sourceReportId && isManagerClub && status === 'SUBMITTED' && <><button type="button" onClick={() => openReview(proposal, 'reject', 'manager')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">Reject as club owner</button><button type="button" onClick={() => openReview(proposal, 'approve', 'manager')} className="rounded-lg bg-purple-500/15 px-3 py-2 text-sm font-semibold text-purple-300">Approve as club owner</button></>}
-                  {!proposal.sourceReportId && canFinalReview && status === 'MANAGERAPPROVED' && <><button type="button" onClick={() => openReview(proposal, 'reject', 'final')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">Final reject</button><button type="button" onClick={() => openReview(proposal, 'approve', 'final')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-300">Final approve</button></>}
-                  {isTreasurerClub && status === 'APPROVED' && !activeSettlement && <button type="button" onClick={() => setSettlementTarget(proposal)} className="rounded-lg bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-300">Submit settlement</button>}
+                  {proposal.sourceReportId && ['SUBMITTED', 'MANAGERAPPROVED'].includes(status) && <button type="button" onClick={() => navigate(`/reports/${proposal.sourceReportId}`)} className="rounded-lg bg-purple-500/15 px-3 py-2 text-sm font-semibold text-purple-300">Xét duyệt báo cáo kết hợp</button>}
+                  {!proposal.sourceReportId && isManagerClub && status === 'SUBMITTED' && <><button type="button" onClick={() => openReview(proposal, 'reject', 'manager')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">Chủ nhiệm từ chối</button><button type="button" onClick={() => openReview(proposal, 'approve', 'manager')} className="rounded-lg bg-purple-500/15 px-3 py-2 text-sm font-semibold text-purple-300">Chủ nhiệm phê duyệt</button></>}
+                  {!proposal.sourceReportId && canFinalReview && status === 'MANAGERAPPROVED' && <><button type="button" onClick={() => openReview(proposal, 'reject', 'final')} className="rounded-lg bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">Từ chối cuối</button><button type="button" onClick={() => openReview(proposal, 'approve', 'final')} className="rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-300">Phê duyệt cuối</button></>}
+                  {isTreasurerClub && status === 'APPROVED' && !activeSettlement && <button type="button" onClick={() => setSettlementTarget(proposal)} className="rounded-lg bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-300">Gửi quyết toán</button>}
                 </div>
               </article>
             )
@@ -354,40 +355,40 @@ export default function FinancePage() {
         </div>
       )}
 
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Budget Proposal" size="lg">
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Tạo đề xuất ngân sách" size="lg">
         <form onSubmit={createProposal} className="space-y-4">
-          <FormField label="Club *"><select value={proposalForm.clubId} onChange={event => setProposalForm(current => ({ ...current, clubId: event.target.value, activityChoice: '', customTitle: '' }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900"><option value="">Select a club</option>{treasurerClubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}</select></FormField>
-          <FormField label="Proposal title *">
+          <FormField label="Câu lạc bộ *"><select value={proposalForm.clubId} onChange={event => setProposalForm(current => ({ ...current, clubId: event.target.value, activityChoice: '', customTitle: '' }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900"><option value="">Chọn câu lạc bộ</option>{treasurerClubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}</select></FormField>
+          <FormField label="Tên đề xuất *">
             <select value={proposalForm.activityChoice} onChange={event => setProposalForm(current => ({ ...current, activityChoice: event.target.value, customTitle: '' }))} required disabled={!proposalForm.clubId} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900 disabled:bg-neutral-100">
-              <option value="">Select an activity or future report</option>
-              {eligibleFutureReports.map(report => <option key={`report-${report.id}`} value={`REPORT:${report.id}`}>[Future event] {report.details?.[0]?.activityName || report.period}</option>)}
+              <option value="">Chọn hoạt động hoặc báo cáo sự kiện sắp tới</option>
+              {eligibleFutureReports.map(report => <option key={`report-${report.id}`} value={`REPORT:${report.id}`}>[Sự kiện sắp tới] {report.details?.[0]?.activityName || report.period}</option>)}
               {eligibleActivities.map(activity => <option key={`activity-${activity.id}`} value={`ACTIVITY:${activity.id}`}>{activity.title}</option>)}
-              <option value="OTHER">Other</option>
+              <option value="OTHER">Khác</option>
             </select>
           </FormField>
-          {proposalForm.activityChoice === 'OTHER' && <FormField label="Custom proposal title *"><input value={proposalForm.customTitle} onChange={event => setProposalForm(current => ({ ...current, customTitle: event.target.value }))} required maxLength={200} placeholder="Enter the proposal title" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>}
-          {proposalForm.clubId && eligibleActivities.length === 0 && eligibleFutureReports.length === 0 && <p className="text-xs text-neutral-500">No eligible activities or future event reports were found. Choose Other to enter a title.</p>}
-          <FormField label="Budget use description *"><textarea value={proposalForm.description} onChange={event => setProposalForm(current => ({ ...current, description: event.target.value }))} required rows={4} maxLength={1000} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
-          <FormField label="Requested amount (VND) *"><input type="number" min="1" value={proposalForm.requestedAmount} onChange={event => setProposalForm(current => ({ ...current, requestedAmount: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
-          <div className="flex gap-3"><button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === 'create'} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === 'create' ? 'Submitting...' : 'Submit proposal'}</button></div>
+          {proposalForm.activityChoice === 'OTHER' && <FormField label="Tên đề xuất tự nhập *"><input value={proposalForm.customTitle} onChange={event => setProposalForm(current => ({ ...current, customTitle: event.target.value }))} required maxLength={200} placeholder="Nhập tên đề xuất" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>}
+          {proposalForm.clubId && eligibleActivities.length === 0 && eligibleFutureReports.length === 0 && <p className="text-xs text-neutral-500">Không tìm thấy hoạt động hoặc báo cáo sự kiện sắp tới phù hợp. Chọn Khác để tự nhập tên.</p>}
+          <FormField label="Mô tả mục đích sử dụng ngân sách *"><textarea value={proposalForm.description} onChange={event => setProposalForm(current => ({ ...current, description: event.target.value }))} required rows={4} maxLength={1000} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <FormField label="Số tiền đề xuất (VNĐ) *"><input type="number" min="1" value={proposalForm.requestedAmount} onChange={event => setProposalForm(current => ({ ...current, requestedAmount: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <div className="flex gap-3"><button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === 'create'} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === 'create' ? 'Đang gửi...' : 'Gửi đề xuất'}</button></div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} title={`${reviewStage === 'manager' ? 'Club Owner' : 'Final'} ${reviewAction === 'approve' ? 'Approval' : 'Rejection'}`}>
+      <Modal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} title={`${reviewStage === 'manager' ? 'Chủ nhiệm' : 'Duyệt cuối'} ${reviewAction === 'approve' ? 'phê duyệt' : 'từ chối'}`}>
         <form onSubmit={submitReview} className="space-y-4">
           <p className="text-sm text-neutral-600">{reviewTarget?.clubName} — {reviewTarget?.title}</p>
-          {reviewStage === 'final' && reviewAction === 'approve' && <FormField label="Approved amount (VND) *"><input type="number" min="1" value={reviewAmount} onChange={event => setReviewAmount(event.target.value)} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>}
-          <FormField label={reviewAction === 'reject' ? 'Rejection reason *' : 'Review note'}><textarea value={reviewNote} onChange={event => setReviewNote(event.target.value)} required={reviewAction === 'reject'} rows={4} maxLength={1000} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
-          <div className="flex gap-3"><button type="button" onClick={() => setReviewTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === reviewTarget?.id} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white disabled:opacity-50 ${reviewAction === 'approve' ? 'bg-emerald-600' : 'bg-rose-600'}`}>Confirm</button></div>
+          {reviewStage === 'final' && reviewAction === 'approve' && <FormField label="Số tiền được duyệt (VNĐ) *"><input type="number" min="1" value={reviewAmount} onChange={event => setReviewAmount(event.target.value)} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>}
+          <FormField label={reviewAction === 'reject' ? 'Lý do từ chối *' : 'Nhận xét xét duyệt'}><textarea value={reviewNote} onChange={event => setReviewNote(event.target.value)} required={reviewAction === 'reject'} rows={4} maxLength={1000} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <div className="flex gap-3"><button type="button" onClick={() => setReviewTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === reviewTarget?.id} className={`flex-1 rounded-lg px-4 py-3 font-semibold text-white disabled:opacity-50 ${reviewAction === 'approve' ? 'bg-emerald-600' : 'bg-rose-600'}`}>Xác nhận</button></div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(settlementTarget)} onClose={() => setSettlementTarget(null)} title="Submit Settlement">
+      <Modal isOpen={Boolean(settlementTarget)} onClose={() => setSettlementTarget(null)} title="Gửi quyết toán">
         <form onSubmit={submitSettlement} className="space-y-4">
-          <p className="text-sm text-neutral-600">{settlementTarget?.title} — maximum {money(settlementTarget?.approvedAmount)}</p>
-          <FormField label="Actual total spent (VND) *"><input type="number" min="1" max={settlementTarget?.approvedAmount || undefined} value={settlementForm.totalSpent} onChange={event => setSettlementForm(current => ({ ...current, totalSpent: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
-          <FormField label="Receipt URL *"><input type="url" value={settlementForm.receiptUrl} onChange={event => setSettlementForm(current => ({ ...current, receiptUrl: event.target.value }))} required pattern="https://.*" placeholder="https://..." className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
-          <div className="flex gap-3"><button type="button" onClick={() => setSettlementTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === settlementTarget?.id} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">Submit settlement</button></div>
+          <p className="text-sm text-neutral-600">{settlementTarget?.title} — tối đa {money(settlementTarget?.approvedAmount)}</p>
+          <FormField label="Tổng chi thực tế (VNĐ) *"><input type="number" min="1" max={settlementTarget?.approvedAmount || undefined} value={settlementForm.totalSpent} onChange={event => setSettlementForm(current => ({ ...current, totalSpent: event.target.value }))} required className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <FormField label="Đường dẫn hóa đơn *"><input type="url" value={settlementForm.receiptUrl} onChange={event => setSettlementForm(current => ({ ...current, receiptUrl: event.target.value }))} required pattern="https://.*" placeholder="https://..." className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" /></FormField>
+          <div className="flex gap-3"><button type="button" onClick={() => setSettlementTarget(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === settlementTarget?.id} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">Gửi quyết toán</button></div>
         </form>
       </Modal>
     </div>

@@ -26,6 +26,7 @@ import Modal from '../components/Modal'
 import ReportStatusBadge, { normalizeReportStatus } from '../components/reports/ReportStatusBadge'
 import ExportHistoryModal from '../components/reports/ExportHistoryModal'
 import MinimalUploadedReportPreview from '../components/reports/MinimalUploadedReportPreview'
+import { formatReportType, formatSystemText } from '../locales/vi'
 
 function formatDate(value, includeTime = false) {
   if (!value) return 'Chưa cập nhật'
@@ -158,7 +159,7 @@ export default function ReportDetailPage() {
         reportId: report.id,
         exportType: type,
       })
-      success(`Đã tạo yêu cầu xuất báo cáo ${type}. Bạn có thể tải file trong lịch sử.`)
+      success(`Đã tạo yêu cầu xuất báo cáo ${type}. Bạn có thể tải tệp trong lịch sử.`)
       setExportHistoryOpen(true)
     } catch (err) {
       if (err.status === 403 || String(err.message).includes('403') || String(err.message).includes('Forbidden')) {
@@ -325,7 +326,7 @@ export default function ReportDetailPage() {
             type="button"
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition hover:bg-slate-700"
-            title={isFullscreen ? 'Thu nhỏ preview' : 'Xem toàn màn hình'}
+            title={isFullscreen ? 'Thu nhỏ bản xem trước' : 'Xem toàn màn hình'}
           >
             {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
@@ -371,9 +372,9 @@ export default function ReportDetailPage() {
             <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 pt-2 font-mono">
               <span>Mã báo cáo: <strong className="text-slate-200">#{report.id}</strong></span>
               <span>•</span>
-              <span>Loại: <strong className="text-slate-200">{report.reportType}</strong></span>
+              <span>Loại: <strong className="text-slate-200">{formatReportType(report.reportType)}</strong></span>
               <span>•</span>
-              <span>Thẻ: <strong className="text-slate-200">{report.tag}</strong></span>
+              <span>Phân loại: <strong className="text-slate-200">{formatReportType(report.tag)}</strong></span>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-left text-xs sm:grid-cols-4">
@@ -399,7 +400,7 @@ export default function ReportDetailPage() {
           {/* SECTION I: EXECUTIVE SUMMARY */}
           <section className="space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              I. Tóm tắt điều hành (Executive Summary)
+              I. Tóm tắt điều hành
             </h2>
             <div className="whitespace-pre-wrap leading-relaxed text-slate-300 text-sm py-2">
               {report.executiveSummary || 'Không có tóm tắt điều hành.'}
@@ -409,7 +410,7 @@ export default function ReportDetailPage() {
           {/* SECTION II: ACHIEVEMENTS */}
           <section className="space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              II. Thành tựu nổi bật (Achievements)
+              II. Thành tựu nổi bật
             </h2>
             <div className="whitespace-pre-wrap leading-relaxed text-slate-300 text-sm py-2">
               {report.achievements || 'Chưa ghi nhận thành tựu nổi bật.'}
@@ -461,7 +462,7 @@ export default function ReportDetailPage() {
                     <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4 text-slate-400">
                       <div>
                         <span className="block text-slate-500">Mục tiêu</span>
-                        <span className="font-medium text-slate-200">{act.objective || 'N/A'}</span>
+                        <span className="font-medium text-slate-200">{act.objective || 'Không áp dụng'}</span>
                       </div>
                       <div>
                         <span className="block text-slate-500">Mục tiêu tham gia</span>
@@ -495,7 +496,7 @@ export default function ReportDetailPage() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:underline"
                         >
-                          <Paperclip size={14} /> Link minh chứng: {act.evidenceUrl} <ExternalLink size={12} />
+                          <Paperclip size={14} /> Liên kết minh chứng: {act.evidenceUrl} <ExternalLink size={12} />
                         </a>
                       </div>
                     )}
@@ -508,7 +509,7 @@ export default function ReportDetailPage() {
           {/* SECTION IV: CHALLENGES */}
           <section className="space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              IV. Khó khăn và tồn tại (Challenges)
+              IV. Khó khăn và tồn tại
             </h2>
             <div className="whitespace-pre-wrap leading-relaxed text-slate-300 text-sm py-2">
               {report.challenges || 'Không có khó khăn hay tồn tại được ghi nhận.'}
@@ -518,7 +519,7 @@ export default function ReportDetailPage() {
           {/* SECTION V: RECOMMENDATIONS */}
           <section className="space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              V. Kiến nghị hỗ trợ (Recommendations)
+              V. Kiến nghị hỗ trợ
             </h2>
             <div className="whitespace-pre-wrap leading-relaxed text-slate-300 text-sm py-2">
               {report.recommendations || 'Không có kiến nghị hỗ trợ.'}
@@ -528,7 +529,7 @@ export default function ReportDetailPage() {
           {/* SECTION VI: NEXT PERIOD PLAN */}
           <section className="space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              VI. Kế hoạch kỳ tiếp theo (Next Period Plan)
+              VI. Kế hoạch kỳ tiếp theo
             </h2>
             <div className="whitespace-pre-wrap leading-relaxed text-slate-300 text-sm py-2">
               {report.nextPeriodPlan || 'Chưa cập nhật kế hoạch cho kỳ tiếp theo.'}
@@ -538,7 +539,7 @@ export default function ReportDetailPage() {
           {/* SECTION VII: EVIDENCE & ATTACHMENTS */}
           <section className="space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              VII. Minh chứng đính kèm (Evidence & Attachments)
+              VII. Minh chứng đính kèm
             </h2>
             {(!report.attachments || report.attachments.length === 0) &&
             !report.details?.some((d) => d.evidenceUrl) ? (
@@ -571,7 +572,7 @@ export default function ReportDetailPage() {
           {/* SECTION VIII: REVIEW COMMENTS & FEEDBACK */}
           <section className="space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2">
-              VIII. Ý kiến phản hồi & Lịch sử xét duyệt (Review Comments)
+              VIII. Ý kiến phản hồi và lịch sử xét duyệt
             </h2>
             {!report.feedback || report.feedback.length === 0 ? (
               <p className="text-sm text-slate-500 py-2">Báo cáo chưa có ý kiến phản hồi từ người duyệt.</p>
@@ -590,7 +591,7 @@ export default function ReportDetailPage() {
                     <p className="text-slate-400">{formatDate(fb.createdAtUtc, true)}</p>
                     {fb.message && (
                       <p className="whitespace-pre-wrap rounded-lg bg-slate-900 p-3 text-slate-200 leading-relaxed border border-slate-800">
-                        {fb.message}
+                        {formatSystemText(fb.message)}
                       </p>
                     )}
                   </div>

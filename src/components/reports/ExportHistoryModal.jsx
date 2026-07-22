@@ -3,6 +3,19 @@ import { Download, FileDown, RefreshCw } from 'lucide-react'
 import Modal from '../Modal'
 import api from '../../services/api'
 import { useToast } from '../../context/ToastContext'
+import { formatErrorMessage } from '../../locales/vi'
+
+const EXPORT_STATUS_LABELS = {
+  Pending: 'Đang chờ',
+  Processing: 'Đang xử lý',
+  Completed: 'Hoàn tất',
+  Failed: 'Thất bại',
+}
+
+const EXPORT_SCOPE_LABELS = {
+  Report: 'Báo cáo',
+  All: 'Tất cả báo cáo',
+}
 
 export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
   const { error, success } = useToast()
@@ -95,10 +108,10 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
                   <div key={item.id} className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 p-4 transition hover:bg-slate-800/50">
                     <div className="flex flex-col min-w-0 pr-4">
                       <span className="font-semibold text-slate-200 truncate">
-                        Export #{item.id} - {item.exportType}
+                        Lần xuất #{item.id} - {item.exportType}
                       </span>
                       <span className="mt-1 text-xs text-slate-400">
-                        Scope: {item.scope || 'Report'} | Thời gian: {new Date(item.createdAtUtc).toLocaleString('vi-VN')}
+                        Phạm vi: {EXPORT_SCOPE_LABELS[item.scope] || 'Báo cáo'} | Thời gian: {new Date(item.createdAtUtc).toLocaleString('vi-VN')}
                       </span>
                       <div className="mt-2 flex items-center gap-2">
                         <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
@@ -106,11 +119,11 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
                           item.status === 'Failed' ? 'bg-rose-400/10 text-rose-400' :
                           'bg-amber-400/10 text-amber-400 animate-pulse'
                         }`}>
-                          {item.status}
+                          {EXPORT_STATUS_LABELS[item.status] || 'Không xác định'}
                         </span>
                         {item.errorMessage && (
                           <span className="text-xs text-rose-400 truncate max-w-[200px]" title={item.errorMessage}>
-                            {item.errorMessage}
+                            {formatErrorMessage(item.errorMessage, 'Không thể tạo tệp xuất báo cáo.')}
                           </span>
                         )}
                       </div>
@@ -127,7 +140,7 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
                           Tải xuống
                         </button>
                       ) : item.status === 'Completed' ? (
-                        <span className="text-xs text-slate-500 italic">File không khả dụng</span>
+                        <span className="text-xs text-slate-500 italic">Tệp không khả dụng</span>
                       ) : null}
                     </div>
                   </div>

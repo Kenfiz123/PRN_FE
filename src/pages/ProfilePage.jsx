@@ -48,7 +48,7 @@ function ExistingProfile() {
               <dd className="mt-2 break-words font-semibold text-white">{user?.name || '-'}</dd>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-              <dt className="text-xs uppercase tracking-wider text-gray-500">Email</dt>
+              <dt className="text-xs uppercase tracking-wider text-gray-500">Thư điện tử</dt>
               <dd className="mt-2 break-words font-semibold text-white">{user?.email || '-'}</dd>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 sm:col-span-2">

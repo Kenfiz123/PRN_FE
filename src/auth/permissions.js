@@ -19,7 +19,7 @@ export const ROLE_LABELS = Object.freeze({
 })
 
 export function formatRole(role) {
-  return ROLE_LABELS[role] || role || 'Khách'
+  return ROLE_LABELS[role] || 'Khách'
 }
 
 export const PERMISSIONS = Object.freeze({

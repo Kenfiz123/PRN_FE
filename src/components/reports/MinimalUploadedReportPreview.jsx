@@ -145,7 +145,7 @@ export default function MinimalUploadedReportPreview({
               onClick={onDownloadOriginal}
               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 text-xs font-semibold text-slate-100 transition hover:border-slate-600 hover:bg-slate-700"
             >
-              <Download size={14} /> <span className="hidden sm:inline">Tải file gốc</span>
+              <Download size={14} /> <span className="hidden sm:inline">Tải tệp gốc</span>
             </button>
           )}
 

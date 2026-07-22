@@ -34,9 +34,9 @@ export default function RegisterPage() {
         newErrors.name = 'Họ và tên phải có ít nhất 2 ký tự.'
       }
       if (!formData.email) {
-        newErrors.email = 'Vui lòng nhập email.'
+        newErrors.email = 'Vui lòng nhập địa chỉ thư điện tử.'
       } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Định dạng email không hợp lệ.'
+        newErrors.email = 'Định dạng thư điện tử không hợp lệ.'
       }
     }
 
@@ -189,7 +189,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="register-email" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Địa chỉ email</label>
+                  <label htmlFor="register-email" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Địa chỉ thư điện tử</label>
                   <input
                     id="register-email"
                     type="email"

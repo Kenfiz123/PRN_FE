@@ -25,22 +25,29 @@ const RATING_STYLES = {
   'Needs Improvement': 'border-rose-400/30 bg-rose-400/10 text-rose-300',
 }
 
+const RATING_LABELS = {
+  Excellent: 'Xuất sắc',
+  Good: 'Tốt',
+  Average: 'Trung bình',
+  'Needs Improvement': 'Cần cải thiện',
+}
+
 const DEFAULT_RULES = [
-  { code: 'APPROVED_REPORT', name: 'Approved report', points: 50, description: 'Each approved report' },
-  { code: 'ACTIVITY', name: 'Activity', points: 5, description: 'Each activity in an approved report' },
-  { code: 'PARTICIPATION', name: 'Participant', points: 0.1, description: 'Each participant in approved activities' },
-  { code: 'REJECTED_REPORT', name: 'Rejected report', points: -10, description: 'Each rejected report' },
-  { code: 'OVERDUE_REPORT', name: 'Overdue report', points: -20, description: 'Each overdue draft or rejected report' },
+  { code: 'APPROVED_REPORT', name: 'Báo cáo đã duyệt', points: 50, description: 'Cho mỗi báo cáo được phê duyệt' },
+  { code: 'ACTIVITY', name: 'Hoạt động', points: 5, description: 'Cho mỗi hoạt động trong báo cáo đã duyệt' },
+  { code: 'PARTICIPATION', name: 'Người tham gia', points: 0.1, description: 'Cho mỗi người tham gia hoạt động đã duyệt' },
+  { code: 'REJECTED_REPORT', name: 'Báo cáo bị từ chối', points: -10, description: 'Cho mỗi báo cáo bị từ chối' },
+  { code: 'OVERDUE_REPORT', name: 'Báo cáo quá hạn', points: -20, description: 'Cho mỗi bản nháp hoặc báo cáo bị từ chối đã quá hạn' },
 ]
 
 function formatPoints(value) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(Number(value) || 0)
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(Number(value) || 0)
 }
 
 function RatingBadge({ rating }) {
   return (
     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${RATING_STYLES[rating] || RATING_STYLES['Needs Improvement']}`}>
-      {rating || 'Needs Improvement'}
+      {RATING_LABELS[rating] || RATING_LABELS['Needs Improvement']}
     </span>
   )
 }
@@ -69,7 +76,7 @@ function ClubKpiDetail({ club }) {
   const score = Number(club?.points) || 0
   const nextTarget = score < 50 ? 50 : score < 200 ? 200 : score < 500 ? 500 : 500
   const progress = score >= 500 ? 100 : Math.min(100, (score / nextTarget) * 100)
-  const nextLabel = score >= 500 ? 'Highest rating achieved' : `${formatPoints(nextTarget - score)} points to the next rating`
+  const nextLabel = score >= 500 ? 'Đã đạt mức xếp loại cao nhất' : `Còn ${formatPoints(nextTarget - score)} điểm để lên mức tiếp theo`
 
   return (
     <div className="space-y-5">
@@ -80,11 +87,11 @@ function ClubKpiDetail({ club }) {
           className="relative overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-slate-900 to-purple-500/10 p-7"
         >
           <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-cyan-400/10 blur-3xl" />
-          <p className="relative text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Club KPI score</p>
+          <p className="relative text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Điểm KPI câu lạc bộ</p>
           <h2 className="relative mt-2 truncate text-xl font-bold text-white sm:text-2xl">{club.clubName}</h2>
           <div className="relative mt-7 flex items-end gap-3">
             <span className="text-6xl font-black leading-none text-white">{formatPoints(score)}</span>
-            <span className="pb-1 text-sm uppercase tracking-widest text-slate-500">points</span>
+            <span className="pb-1 text-sm uppercase tracking-widest text-slate-500">điểm</span>
           </div>
           <div className="relative mt-5"><RatingBadge rating={club.rating} /></div>
           <div className="relative mt-7">
@@ -99,12 +106,12 @@ function ClubKpiDetail({ club }) {
         </motion.div>
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-          <MetricCard icon={CheckCircle2} label="Approved reports" value={club.approvedReports} tone="emerald" />
-          <MetricCard icon={Activity} label="Activities" value={club.activities} tone="cyan" />
-          <MetricCard icon={Users} label="Participants" value={club.participants} tone="purple" />
-          <MetricCard icon={XCircle} label="Rejected reports" value={club.rejectedReports} tone="rose" />
-          <MetricCard icon={Clock3} label="Overdue reports" value={club.overdueReports} tone="amber" />
-          <MetricCard icon={Target} label="Penalty points" value={Number(club.rejectedReports || 0) * 10 + Number(club.overdueReports || 0) * 20} tone="rose" />
+          <MetricCard icon={CheckCircle2} label="Báo cáo đã duyệt" value={club.approvedReports} tone="emerald" />
+          <MetricCard icon={Activity} label="Hoạt động" value={club.activities} tone="cyan" />
+          <MetricCard icon={Users} label="Người tham gia" value={club.participants} tone="purple" />
+          <MetricCard icon={XCircle} label="Báo cáo bị từ chối" value={club.rejectedReports} tone="rose" />
+          <MetricCard icon={Clock3} label="Báo cáo quá hạn" value={club.overdueReports} tone="amber" />
+          <MetricCard icon={Target} label="Điểm bị trừ" value={Number(club.rejectedReports || 0) * 10 + Number(club.overdueReports || 0) * 20} tone="rose" />
         </div>
       </section>
     </div>
@@ -134,14 +141,20 @@ export default function KpiPage() {
       ])
       const nextClubs = Array.isArray(leaderboard?.clubs) ? leaderboard.clubs : []
       setClubs(nextClubs)
-      setRules(Array.isArray(ruleData) && ruleData.length > 0 ? ruleData : DEFAULT_RULES)
+      const returnedRules = Array.isArray(ruleData) && ruleData.length > 0 ? ruleData : DEFAULT_RULES
+      setRules(returnedRules.map(rule => {
+        const localizedRule = DEFAULT_RULES.find(item => item.code === rule.code)
+        return localizedRule
+          ? { ...rule, name: localizedRule.name, description: localizedRule.description }
+          : rule
+      }))
       setCalculatedAt(leaderboard?.calculatedAtUtc || null)
       setSelectedClubId(current => {
         if (nextClubs.some(club => String(club.clubId) === String(current))) return current
         return nextClubs[0] ? String(nextClubs[0].clubId) : ''
       })
     } catch (requestError) {
-      setError(requestError?.message || 'Unable to load KPI data.')
+      setError(requestError?.message || 'Không thể tải dữ liệu KPI.')
     } finally {
       setIsLoading(false)
     }
@@ -174,28 +187,28 @@ export default function KpiPage() {
       <section className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/40 p-6 sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-cyan-300"><BarChart3 size={18} /><span className="text-xs font-bold uppercase tracking-[0.24em]">Performance analytics</span></div>
-            <h1 className="mt-3 text-3xl font-black text-white">CLUB KPI</h1>
+            <div className="flex items-center gap-2 text-cyan-300"><BarChart3 size={18} /><span className="text-xs font-bold uppercase tracking-[0.24em]">Phân tích hiệu quả</span></div>
+            <h1 className="mt-3 text-3xl font-black text-white">KPI CÂU LẠC BỘ</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-400">
-              {isAdmin ? 'Compare KPI results across every club.' : 'View the KPI result for clubs where you are an approved member.'}
+              {isAdmin ? 'So sánh kết quả KPI của toàn bộ câu lạc bộ.' : 'Xem kết quả KPI của câu lạc bộ mà bạn là thành viên được duyệt.'}
             </p>
           </div>
           <form onSubmit={applyPeriod} className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <input
               value={periodInput}
               onChange={event => setPeriodInput(event.target.value)}
-              placeholder="All periods"
+              placeholder="Tất cả kỳ báo cáo"
               className="min-w-52 rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/60"
             />
-            <button type="submit" className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">Apply</button>
-            <button type="button" onClick={loadKpis} aria-label="Refresh KPI" className="flex items-center justify-center rounded-xl border border-slate-700 px-4 py-3 text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-300">
+            <button type="submit" className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">Áp dụng</button>
+            <button type="button" onClick={loadKpis} aria-label="Làm mới KPI" className="flex items-center justify-center rounded-xl border border-slate-700 px-4 py-3 text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-300">
               <RefreshCw size={17} className={isLoading ? 'animate-spin' : ''} />
             </button>
           </form>
         </div>
         <p className="mt-5 text-xs text-slate-600">
-          {period ? `Period: ${period}` : 'All-time calculation'}
-          {calculatedAt ? ` · Updated ${new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(calculatedAt))}` : ''}
+          {period ? `Kỳ báo cáo: ${period}` : 'Tính trên toàn bộ thời gian'}
+          {calculatedAt ? ` · Cập nhật ${new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(calculatedAt))}` : ''}
         </p>
       </section>
 
@@ -206,29 +219,29 @@ export default function KpiPage() {
       ) : clubs.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-20 text-center">
           <Award className="mx-auto text-slate-600" size={44} />
-          <h2 className="mt-4 text-lg font-bold text-white">No KPI data available</h2>
-          <p className="mt-2 text-sm text-slate-500">{isAdmin ? 'No clubs are available.' : 'You need an approved club membership to view a club KPI.'}</p>
+          <h2 className="mt-4 text-lg font-bold text-white">Chưa có dữ liệu KPI</h2>
+          <p className="mt-2 text-sm text-slate-500">{isAdmin ? 'Chưa có câu lạc bộ nào.' : 'Bạn cần là thành viên được duyệt để xem KPI câu lạc bộ.'}</p>
         </div>
       ) : isAdmin ? (
         <>
           <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <MetricCard icon={BarChart3} label="All clubs" value={overview.total} tone="cyan" />
-            <MetricCard icon={Award} label="Excellent clubs" value={overview.excellent} tone="emerald" />
-            <MetricCard icon={Target} label="Average score" value={overview.averageScore} tone="purple" />
-            <MetricCard icon={CheckCircle2} label="Highest score" value={overview.highest} tone="amber" />
+            <MetricCard icon={BarChart3} label="Tất cả câu lạc bộ" value={overview.total} tone="cyan" />
+            <MetricCard icon={Award} label="Câu lạc bộ xuất sắc" value={overview.excellent} tone="emerald" />
+            <MetricCard icon={Target} label="Điểm trung bình" value={overview.averageScore} tone="purple" />
+            <MetricCard icon={CheckCircle2} label="Điểm cao nhất" value={overview.highest} tone="amber" />
           </section>
 
           <section className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/55">
             <div className="flex flex-col gap-4 border-b border-slate-800 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div><h2 className="text-lg font-bold text-white">All club rankings</h2><p className="mt-1 text-xs text-slate-500">{filteredClubs.length} clubs shown</p></div>
+              <div><h2 className="text-lg font-bold text-white">Bảng xếp hạng câu lạc bộ</h2><p className="mt-1 text-xs text-slate-500">Đang hiển thị {filteredClubs.length} câu lạc bộ</p></div>
               <label className="relative block sm:w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={17} />
-                <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search club..." className="w-full rounded-xl border border-slate-700 bg-slate-950/60 py-2.5 pl-10 pr-4 text-sm text-white outline-none focus:border-cyan-400/50" />
+                <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Tìm câu lạc bộ..." className="w-full rounded-xl border border-slate-700 bg-slate-950/60 py-2.5 pl-10 pr-4 text-sm text-white outline-none focus:border-cyan-400/50" />
               </label>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-[920px] w-full text-left text-sm">
-                <thead className="bg-slate-950/40 text-[11px] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-4">Rank</th><th className="px-5 py-4">Club</th><th className="px-5 py-4">Score</th><th className="px-5 py-4">Rating</th><th className="px-5 py-4">Approved</th><th className="px-5 py-4">Activities</th><th className="px-5 py-4">Participants</th><th className="px-5 py-4">Rejected</th><th className="px-5 py-4">Overdue</th></tr></thead>
+                <thead className="bg-slate-950/40 text-[11px] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-4">Hạng</th><th className="px-5 py-4">Câu lạc bộ</th><th className="px-5 py-4">Điểm</th><th className="px-5 py-4">Xếp loại</th><th className="px-5 py-4">Đã duyệt</th><th className="px-5 py-4">Hoạt động</th><th className="px-5 py-4">Người tham gia</th><th className="px-5 py-4">Bị từ chối</th><th className="px-5 py-4">Quá hạn</th></tr></thead>
                 <tbody className="divide-y divide-slate-800/80">
                   {filteredClubs.map(club => (
                     <tr key={club.clubId} className="transition hover:bg-cyan-400/[0.03]">
@@ -252,7 +265,7 @@ export default function KpiPage() {
         <>
           {clubs.length > 1 && (
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-              <label htmlFor="kpi-club" className="text-sm font-semibold text-slate-300">Select club</label>
+              <label htmlFor="kpi-club" className="text-sm font-semibold text-slate-300">Chọn câu lạc bộ</label>
               <select id="kpi-club" value={selectedClubId} onChange={event => setSelectedClubId(event.target.value)} className="min-w-56 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none focus:border-cyan-400/50">
                 {clubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}
               </select>
@@ -263,7 +276,7 @@ export default function KpiPage() {
       )}
 
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6">
-        <div><h2 className="text-lg font-bold text-white">KPI calculation rules</h2><p className="mt-1 text-xs text-slate-500">Scores never fall below zero.</p></div>
+        <div><h2 className="text-lg font-bold text-white">Quy tắc tính điểm KPI</h2><p className="mt-1 text-xs text-slate-500">Tổng điểm không bao giờ thấp hơn 0.</p></div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {rules.map(rule => (
             <div key={rule.code} className="rounded-2xl border border-slate-800 bg-slate-950/45 p-4">
@@ -274,8 +287,8 @@ export default function KpiPage() {
           ))}
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 text-center text-xs sm:grid-cols-4">
-          {[['Excellent', '≥ 500'], ['Good', '≥ 200'], ['Average', '≥ 50'], ['Needs Improvement', '< 50']].map(([rating, range]) => (
-            <div key={rating} className="rounded-xl border border-slate-800 p-3"><p className="font-bold text-white">{rating}</p><p className="mt-1 text-slate-500">{range} points</p></div>
+          {[['Xuất sắc', '≥ 500'], ['Tốt', '≥ 200'], ['Trung bình', '≥ 50'], ['Cần cải thiện', '< 50']].map(([rating, range]) => (
+            <div key={rating} className="rounded-xl border border-slate-800 p-3"><p className="font-bold text-white">{rating}</p><p className="mt-1 text-slate-500">{range} điểm</p></div>
           ))}
         </div>
       </section>

@@ -61,7 +61,7 @@ export default function SystemAdminProfile({ user }) {
     const fullName = formData.name.trim();
     const emailAddress = formData.email.trim();
     if (!fullName || !emailAddress) {
-      error("Vui lòng nhập đầy đủ họ tên và email.");
+      error("Vui lòng nhập đầy đủ họ tên và thư điện tử.");
       return;
     }
 
@@ -100,7 +100,7 @@ export default function SystemAdminProfile({ user }) {
   ];
 
   const details = [
-    { label: "Email", value: formData.email, field: "email", icon: Mail },
+    { label: "Thư điện tử", value: formData.email, field: "email", icon: Mail },
     { label: "Tên đăng nhập", value: user?.username || "-", icon: UserRound, readonly: true },
     { label: "Vai trò", value: user?.roles?.map(formatRole).join(", ") || "Quản trị hệ thống", icon: ShieldCheck, readonly: true },
     { label: "Trạng thái", value: user?.isActive && !user?.isLocked ? "Đang hoạt động" : "Bị hạn chế", icon: Check, readonly: true },
@@ -190,7 +190,7 @@ export default function SystemAdminProfile({ user }) {
             <div className="visual-scanline" />
 
             <div className="visual-topline">
-              <span>VANGUARD / QUẢN TRỊ 01</span>
+              <span>TRUNG TÂM / QUẢN TRỊ 01</span>
               <span className="live-pill">
                 <i />
                 Trực tuyến

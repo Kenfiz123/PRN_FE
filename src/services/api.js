@@ -45,18 +45,18 @@ class ApiService {
   async getErrorMessage(response, { isAuthRequest = false } = {}) {
     const payload = await this.parseResponse(response).catch(() => null);
     if (payload?.message) {
-      return payload.message;
+      return formatErrorMessage(payload.message, vi.errors.server);
     }
 
     if (payload?.errors) {
       const firstValidationError = Object.values(payload.errors).flat().find(Boolean);
       if (firstValidationError) {
-        return firstValidationError;
+        return formatErrorMessage(firstValidationError, vi.errors.validation);
       }
     }
 
     if (payload?.title) {
-      return payload.title;
+      return formatErrorMessage(payload.title, vi.errors.server);
     }
 
     const statusMessages = {
@@ -400,7 +400,7 @@ class ApiService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.message || 'Không thể tải lên báo cáo.');
+      const error = new Error(formatErrorMessage(errorData.message, 'Không thể tải lên báo cáo.'));
       error.status = response.status;
       throw error;
     }
@@ -424,7 +424,7 @@ class ApiService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.message || 'Không thể thay đổi tệp báo cáo.');
+      const error = new Error(formatErrorMessage(errorData.message, 'Không thể thay đổi tệp báo cáo.'));
       error.status = response.status;
       throw error;
     }
@@ -461,7 +461,7 @@ class ApiService {
     }
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.message || 'Không thể tải tệp báo cáo.');
+      const error = new Error(formatErrorMessage(errorData.message, 'Không thể tải tệp báo cáo.'));
       error.status = response.status;
       throw error;
     }
@@ -690,7 +690,7 @@ class ApiService {
     }
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.message || 'Không thể tải tệp xuất.');
+      const error = new Error(formatErrorMessage(errorData.message, 'Không thể tải tệp xuất.'));
       error.status = response.status;
       throw error;
     }
@@ -744,7 +744,7 @@ class ApiService {
       let msg = 'Không thể tải bản xem trước của tệp báo cáo.';
       try {
         const parsed = JSON.parse(errorText);
-        if (parsed.message) msg = parsed.message;
+        if (parsed.message) msg = formatErrorMessage(parsed.message, msg);
       } catch (_) {}
       const err = new Error(msg);
       err.status = response.status;
