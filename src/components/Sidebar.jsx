@@ -8,7 +8,7 @@ import { formatRole, PERMISSIONS } from '../auth/permissions'
 const navItems = [
   {
     path: '/dashboard',
-    name: 'Dashboard',
+    name: 'Tổng quan',
     permission: PERMISSIONS.VIEW_DASHBOARD,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -18,7 +18,7 @@ const navItems = [
   },
   {
     path: '/clubs',
-    name: 'Clubs',
+    name: 'Câu lạc bộ',
     permission: PERMISSIONS.VIEW_CLUBS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -28,7 +28,7 @@ const navItems = [
   },
   {
     path: '/reports',
-    name: 'Reports',
+    name: 'Báo cáo',
     permission: PERMISSIONS.VIEW_REPORTS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -38,7 +38,7 @@ const navItems = [
   },
   {
     path: '/activities',
-    name: 'Activities',
+    name: 'Hoạt động',
     permission: PERMISSIONS.VIEW_ACTIVITIES,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,7 +48,7 @@ const navItems = [
   },
   {
     path: '/finance',
-    name: 'Finance',
+    name: 'Tài chính',
     permission: PERMISSIONS.VIEW_FINANCE,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,7 +58,7 @@ const navItems = [
   },
   {
     path: '/notifications',
-    name: 'Notifications',
+    name: 'Thông báo',
     permission: PERMISSIONS.VIEW_NOTIFICATIONS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,7 +68,7 @@ const navItems = [
   },
   {
     path: '/profile',
-    name: 'Profile',
+    name: 'Hồ sơ',
     permission: PERMISSIONS.VIEW_PROFILE,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,7 +78,7 @@ const navItems = [
   },
   {
     path: '/users',
-    name: 'Users',
+    name: 'Người dùng',
     permission: PERMISSIONS.MANAGE_USERS,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,21 +107,21 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
           </div>
           <div>
             <strong className="block text-[18px] tracking-[0.12em] font-podium text-white leading-tight">CLUBHUB</strong>
-            <small className="block mt-[3px] text-[9px] tracking-[0.22em] text-[#e6ecf8]/40 uppercase">Report System</small>
+          <small className="block mt-[3px] text-[9px] tracking-[0.22em] text-[#e6ecf8]/40 uppercase">HỆ THỐNG BÁO CÁO</small>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setIsMobileOpen(false)}
-          aria-label="Close navigation menu"
-          title="Close navigation menu"
+          aria-label="Đóng menu điều hướng"
+          title="Đóng menu điều hướng"
           className="lg:hidden text-gray-400 hover:text-white"
         >
           <X size={18} />
         </button>
       </div>
 
-      <p className="mx-6 mt-[15px] mb-[10px] text-[9px] font-semibold tracking-[0.28em] text-[#dde5f5]/35 uppercase">Workspace</p>
+      <p className="mx-6 mt-[15px] mb-[10px] text-[9px] font-semibold tracking-[0.28em] text-[#dde5f5]/35 uppercase">KHU VỰC LÀM VIỆC</p>
 
       {/* Navigation */}
       <nav className="flex-1 px-3.5 overflow-y-auto space-y-1 flex flex-col pb-4">
@@ -160,8 +160,8 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
             <span />
           </div>
           <div>
-            <strong className="block text-[11px] font-semibold text-[#f8faff]/90">Secure session</strong>
-            <small className="block mt-1 text-[9px] text-[#dee6f5]/40">Role-based access enabled</small>
+            <strong className="block text-[11px] font-semibold text-[#f8faff]/90">Phiên an toàn</strong>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40">Đã bật phân quyền theo vai trò</small>
           </div>
         </div>
 
@@ -171,15 +171,15 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }) {
             {user?.avatar || 'AC'}
           </div>
           <div className="flex-1 min-w-0">
-            <strong className="block text-[11px] font-semibold text-[#f8faff]/90 truncate">{user?.name || 'Guest User'}</strong>
-            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.roles?.map(formatRole).join(', ') || 'Visitor'}</small>
+            <strong className="block text-[11px] font-semibold text-[#f8faff]/90 truncate">{user?.name || 'Khách'}</strong>
+            <small className="block mt-1 text-[9px] text-[#dee6f5]/40 truncate">{user?.roles?.map(formatRole).join(', ') || 'Khách'}</small>
           </div>
           <button
             type="button"
             onClick={logout}
-            aria-label="Sign out"
+            aria-label="Đăng xuất"
             className="text-gray-400 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 absolute right-3"
-            title="Sign out"
+            title="Đăng xuất"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

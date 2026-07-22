@@ -5,7 +5,7 @@ import Sidebar from './Sidebar'
 import Header from './Header'
 import './layout.css'
 
-export default function Layout({ title, subtitle, children }) {
+export default function Layout({ title, children }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   return (
@@ -25,7 +25,6 @@ export default function Layout({ title, subtitle, children }) {
         {/* Header */}
         <Header 
           title={title} 
-          subtitle={subtitle} 
           onMenuClick={() => setIsMobileOpen(true)} 
         />
 

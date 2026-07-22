@@ -38,7 +38,7 @@ function getNextActivityDate(activity, now = new Date()) {
 }
 
 function formatActivityDate(value) {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('vi-VN', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -92,10 +92,10 @@ export default function DashboardPage() {
     .slice(0, 4)
 
   const cards = [
-    { label: 'Accessible clubs', value: approvedClubs.length, color: 'text-cyan-300', href: '/clubs', show: hasPermission(PERMISSIONS.VIEW_CLUBS) },
-    { label: 'Visible reports', value: data.reports.length, color: 'text-purple-300', href: '/reports', show: hasPermission(PERMISSIONS.VIEW_REPORTS) },
-    { label: 'Activities', value: data.activities.length, color: 'text-emerald-300', href: '/activities', show: hasPermission(PERMISSIONS.VIEW_ACTIVITIES) },
-    { label: 'Unread notifications', value: unreadNotifications.length, color: 'text-amber-300', href: '/notifications', show: hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) },
+    { label: 'Câu lạc bộ có quyền truy cập', value: approvedClubs.length, color: 'text-cyan-300', href: '/clubs', show: hasPermission(PERMISSIONS.VIEW_CLUBS) },
+    { label: 'Báo cáo có thể xem', value: data.reports.length, color: 'text-purple-300', href: '/reports', show: hasPermission(PERMISSIONS.VIEW_REPORTS) },
+    { label: 'Hoạt động', value: data.activities.length, color: 'text-emerald-300', href: '/activities', show: hasPermission(PERMISSIONS.VIEW_ACTIVITIES) },
+    { label: 'Thông báo chưa đọc', value: unreadNotifications.length, color: 'text-amber-300', href: '/notifications', show: hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) },
   ].filter(card => card.show)
 
   return (
@@ -106,10 +106,7 @@ export default function DashboardPage() {
         className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-slate-900/60 to-purple-500/10 p-6 sm:p-8"
       >
         <p className="text-sm font-semibold uppercase tracking-wider text-cyan-300">ClubReportHub</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Welcome, {user?.name || user?.username}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
-          Dashboard data is limited by your system role and approved club access.
-        </p>
+        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Xin chào, {user?.name || user?.username}</h2>
       </motion.section>
 
       {isLoading ? (
@@ -131,17 +128,17 @@ export default function DashboardPage() {
             {hasPermission(PERMISSIONS.VIEW_ACTIVITIES) && (
               <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Upcoming activities</h3>
-                  <Link to="/activities" className="text-sm font-semibold text-cyan-300">View all</Link>
+                  <h3 className="text-lg font-bold text-white">Hoạt động sắp tới</h3>
+                  <Link to="/activities" className="text-sm font-semibold text-cyan-300">Xem tất cả</Link>
                 </div>
                 {upcomingActivities.length === 0 ? (
-                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No upcoming activities.</p>
+                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">Chưa có hoạt động sắp tới.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
                     {upcomingActivities.map(({ activity, nextDate }) => (
                       <div key={activity.id} className="rounded-xl bg-slate-950/50 p-4">
                         <div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-white">{activity.title}</p><p className="mt-1 text-xs text-cyan-300">{activity.clubName}</p></div><time className="text-right text-xs text-gray-500">{formatActivityDate(nextDate)}</time></div>
-                        {activity.meetingDays?.length > 0 && <p className="mt-2 text-xs text-amber-300">Weekly schedule · Vietnam time</p>}
+                        {activity.meetingDays?.length > 0 && <p className="mt-2 text-xs text-amber-300">Lịch hằng tuần, giờ Việt Nam</p>}
                       </div>
                     ))}
                   </div>
@@ -152,11 +149,11 @@ export default function DashboardPage() {
             {hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) && (
               <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Recent notifications</h3>
-                  <Link to="/notifications" className="text-sm font-semibold text-cyan-300">View all</Link>
+                  <h3 className="text-lg font-bold text-white">Thông báo gần đây</h3>
+                  <Link to="/notifications" className="text-sm font-semibold text-cyan-300">Xem tất cả</Link>
                 </div>
                 {recentNotifications.length === 0 ? (
-                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No notifications yet.</p>
+                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">Chưa có thông báo.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
                     {recentNotifications.map(notification => (
@@ -166,7 +163,7 @@ export default function DashboardPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-3">
                               <p className="font-semibold text-white">{notification.title}</p>
-                              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{notification.isRead ? 'Read' : 'Unread'}</span>
+                              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{notification.isRead ? 'Đã đọc' : 'Chưa đọc'}</span>
                             </div>
                             <p className="mt-1 line-clamp-2 text-sm text-gray-400">{notification.message}</p>
                           </div>

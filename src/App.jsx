@@ -28,7 +28,7 @@ function ProtectedRoute({ children, permission }) {
       <div className="min-h-screen bg-cyber-dark flex items-center justify-center">
         <div className="text-center">
           <div className="cyber-spinner mx-auto mb-4" />
-          <p className="font-orbitron text-cyan-400 animate-pulse">Loading...</p>
+          <p className="font-orbitron text-cyan-400 animate-pulse">Đang tải...</p>
         </div>
       </div>
     )
@@ -46,10 +46,10 @@ function ProtectedRoute({ children, permission }) {
 }
 
 // Route with Layout
-function LayoutRoute({ children, title, subtitle, permission }) {
+function LayoutRoute({ children, title, permission }) {
   return (
     <ProtectedRoute permission={permission}>
-      <Layout title={title} subtitle={subtitle}>
+      <Layout title={title}>
         {children}
       </Layout>
     </ProtectedRoute>
@@ -100,7 +100,7 @@ export default function App() {
       <Route
         path="/dashboard"
         element={
-          <LayoutRoute title="Dashboard" subtitle="Overview" permission={PERMISSIONS.VIEW_DASHBOARD}>
+          <LayoutRoute title="Tổng quan" permission={PERMISSIONS.VIEW_DASHBOARD}>
             <DashboardPage />
           </LayoutRoute>
         }
@@ -108,7 +108,7 @@ export default function App() {
       <Route
         path="/clubs"
         element={
-          <LayoutRoute title="Clubs" subtitle="Management" permission={PERMISSIONS.VIEW_CLUBS}>
+          <LayoutRoute title="Câu lạc bộ" permission={PERMISSIONS.VIEW_CLUBS}>
             <ClubsPage />
           </LayoutRoute>
         }
@@ -116,7 +116,7 @@ export default function App() {
       <Route
         path="/clubs/:clubId/members"
         element={
-          <LayoutRoute title="Club Members" subtitle="Member Management" permission={PERMISSIONS.VIEW_CLUBS}>
+          <LayoutRoute title="Thành viên câu lạc bộ" permission={PERMISSIONS.VIEW_CLUBS}>
             <ClubMembersPage />
           </LayoutRoute>
         }
@@ -124,7 +124,7 @@ export default function App() {
       <Route
         path="/clubs/:clubId/attendance"
         element={
-          <LayoutRoute title="Attendance" subtitle="Activity Attendance" permission={PERMISSIONS.VIEW_ACTIVITIES}>
+          <LayoutRoute title="Điểm danh hoạt động" permission={PERMISSIONS.VIEW_ACTIVITIES}>
             <ActivityAttendancePage />
           </LayoutRoute>
         }
@@ -132,7 +132,7 @@ export default function App() {
       <Route
         path="/reports"
         element={
-          <LayoutRoute title="Reports" subtitle="Management" permission={PERMISSIONS.VIEW_REPORTS}>
+          <LayoutRoute title="Báo cáo" permission={PERMISSIONS.VIEW_REPORTS}>
             <ReportsPage />
           </LayoutRoute>
         }
@@ -140,7 +140,7 @@ export default function App() {
       <Route
         path="/reports/create"
         element={
-          <LayoutRoute title="Create Report" subtitle="Create a report for a new activity period" permission={PERMISSIONS.AUTHOR_REPORTS}>
+          <LayoutRoute title="Tạo báo cáo" permission={PERMISSIONS.AUTHOR_REPORTS}>
             <CreateReportPage />
           </LayoutRoute>
         }
@@ -148,7 +148,7 @@ export default function App() {
       <Route
         path="/reports/:id"
         element={
-          <LayoutRoute title="Report Details" subtitle="Activity report content" permission={PERMISSIONS.VIEW_REPORTS}>
+          <LayoutRoute title="Chi tiết báo cáo" permission={PERMISSIONS.VIEW_REPORTS}>
             <ReportDetailPage />
           </LayoutRoute>
         }
@@ -156,7 +156,7 @@ export default function App() {
       <Route
         path="/reports/:id/edit"
         element={
-          <LayoutRoute title="Edit Report" subtitle="Update the activity report" permission={PERMISSIONS.AUTHOR_REPORTS}>
+          <LayoutRoute title="Chỉnh sửa báo cáo" permission={PERMISSIONS.AUTHOR_REPORTS}>
             <CreateReportPage />
           </LayoutRoute>
         }
@@ -164,7 +164,7 @@ export default function App() {
       <Route
         path="/activities"
         element={
-          <LayoutRoute title="Activities" subtitle="Management" permission={PERMISSIONS.VIEW_ACTIVITIES}>
+          <LayoutRoute title="Hoạt động" permission={PERMISSIONS.VIEW_ACTIVITIES}>
             <ActivitiesPage />
           </LayoutRoute>
         }
@@ -172,7 +172,7 @@ export default function App() {
       <Route
         path="/finance"
         element={
-          <LayoutRoute title="Finance" subtitle="Management" permission={PERMISSIONS.VIEW_FINANCE}>
+          <LayoutRoute title="Tài chính" permission={PERMISSIONS.VIEW_FINANCE}>
             <FinancePage />
           </LayoutRoute>
         }
@@ -180,7 +180,7 @@ export default function App() {
       <Route
         path="/notifications"
         element={
-          <LayoutRoute title="Notifications" subtitle="Alerts" permission={PERMISSIONS.VIEW_NOTIFICATIONS}>
+          <LayoutRoute title="Thông báo" permission={PERMISSIONS.VIEW_NOTIFICATIONS}>
             <NotificationsPage />
           </LayoutRoute>
         }
@@ -188,7 +188,7 @@ export default function App() {
       <Route
         path="/profile"
         element={
-          <LayoutRoute title="Profile" subtitle="Settings" permission={PERMISSIONS.VIEW_PROFILE}>
+          <LayoutRoute title="Hồ sơ" permission={PERMISSIONS.VIEW_PROFILE}>
             <ProfilePage />
           </LayoutRoute>
         }
@@ -196,7 +196,7 @@ export default function App() {
       <Route
         path="/users"
         element={
-          <LayoutRoute title="Users" subtitle="System Administration" permission={PERMISSIONS.MANAGE_USERS}>
+          <LayoutRoute title="Người dùng" permission={PERMISSIONS.MANAGE_USERS}>
             <UsersPage />
           </LayoutRoute>
         }

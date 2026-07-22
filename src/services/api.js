@@ -1,3 +1,5 @@
+import { formatErrorMessage, vi } from '../locales/vi'
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:7000')
   .replace(/\/+$/, '');
 
@@ -40,7 +42,7 @@ class ApiService {
     return contentType.includes('application/json') ? response.json() : response.text();
   }
 
-  async getErrorMessage(response) {
+  async getErrorMessage(response, { isAuthRequest = false } = {}) {
     const payload = await this.parseResponse(response).catch(() => null);
     if (payload?.message) {
       return payload.message;
@@ -58,14 +60,14 @@ class ApiService {
     }
 
     const statusMessages = {
-      400: 'The submitted information is invalid.',
-      401: 'Email/username or password is incorrect.',
-      403: 'You do not have permission to perform this action.',
-      404: 'The requested resource was not found.',
-      409: 'Username or email already exists.',
-      429: 'Too many attempts. Please wait a moment and try again.',
+      400: vi.errors.validation,
+      401: isAuthRequest ? vi.errors.credentials : vi.errors.unauthorized,
+      403: vi.errors.forbidden,
+      404: vi.errors.notFound,
+      409: vi.errors.conflict,
+      429: vi.errors.rateLimited,
     };
-    return statusMessages[response.status] || `Request failed (${response.status}).`;
+    return formatErrorMessage(statusMessages[response.status], vi.errors.server)
   }
 
   async request(endpoint, options = {}) {
@@ -88,7 +90,7 @@ class ApiService {
 
     if (response.status === 401) {
       if (endpoint === '/api/auth/login' || endpoint === '/api/auth/register') {
-        const authError = new Error(await this.getErrorMessage(response));
+        const authError = new Error(await this.getErrorMessage(response, { isAuthRequest: true }));
         authError.status = response.status;
         throw authError;
       }
@@ -108,7 +110,7 @@ class ApiService {
       // Clear tokens and redirect to login
       this.clearTokens();
       window.location.href = '/login';
-      throw new Error('Unauthorized');
+      throw new Error(vi.errors.unauthorized);
     }
 
     if (!response.ok) {
@@ -720,6 +722,66 @@ class ApiService {
     a.click();
     window.URL.revokeObjectURL(objectUrl);
     document.body.removeChild(a);
+  }
+
+  async getUploadedReportFilePreview(reportId) {
+    const url = this.buildUrl(`/api/reports/${reportId}/uploaded-file/preview`);
+    const headers = {};
+    const token = this.getToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { headers });
+
+    // Log safe diagnostics
+    console.log("[Preview] GET", url);
+    console.log("[Preview] Status:", response.status);
+    console.log("[Preview] Content-Type:", response.headers.get('content-type') || 'none');
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      let msg = 'Không thể tải bản xem trước của tệp báo cáo.';
+      try {
+        const parsed = JSON.parse(errorText);
+        if (parsed.message) msg = parsed.message;
+      } catch (_) {}
+      const err = new Error(msg);
+      err.status = response.status;
+      throw err;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const byteLength = arrayBuffer.byteLength;
+    console.log("[Preview] Received bytes:", byteLength);
+
+    if (byteLength === 0) {
+      throw new Error('Không có dữ liệu bản xem trước.');
+    }
+
+    // Validate PDF signature: %PDF-
+    const bytes = new Uint8Array(arrayBuffer);
+    const firstFive = bytes.slice(0, 5);
+    console.log("[Preview] First 5 bytes:", Array.from(firstFive).map(b => b.toString(16)));
+
+    const isPdf =
+      bytes.length >= 5 &&
+      bytes[0] === 0x25 && // %
+      bytes[1] === 0x50 && // P
+      bytes[2] === 0x44 && // D
+      bytes[3] === 0x46 && // F
+      bytes[4] === 0x2d;   // -
+
+    if (!isPdf) {
+      const signature = String.fromCharCode(...firstFive.slice(0, Math.min(20, bytes.length)));
+      console.error("[Preview] Invalid PDF signature. Got:", JSON.stringify(signature));
+      throw new Error(
+        `Bản xem trước không phải PDF hợp lệ. Loại nội dung: ${response.headers.get('content-type') || 'không xác định'}`
+      );
+    }
+
+    console.log("[Preview] PDF signature validated successfully");
+    return bytes;
   }
 
   // Notifications

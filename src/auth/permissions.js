@@ -7,17 +7,19 @@ export const ROLES = Object.freeze({
   CLUB_MEMBER: 'CLUB_MEMBER',
 })
 
+import { vi } from '../locales/vi'
+
 export const ROLE_LABELS = Object.freeze({
-  [ROLES.ADMIN]: 'Administrator',
-  [ROLES.SYSTEM_ADMIN]: 'System administrator',
-  [ROLES.STUDENT_AFFAIRS_ADMIN]: 'Student affairs administrator',
-  [ROLES.CLUB_MANAGER]: 'Club manager',
-  [ROLES.TREASURER]: 'Treasurer',
-  [ROLES.CLUB_MEMBER]: 'Club member',
+  [ROLES.ADMIN]: vi.roles.ADMIN,
+  [ROLES.SYSTEM_ADMIN]: vi.roles.SYSTEM_ADMIN,
+  [ROLES.STUDENT_AFFAIRS_ADMIN]: vi.roles.STUDENT_AFFAIRS_ADMIN,
+  [ROLES.CLUB_MANAGER]: vi.roles.CLUB_MANAGER,
+  [ROLES.TREASURER]: vi.roles.TREASURER,
+  [ROLES.CLUB_MEMBER]: vi.roles.CLUB_MEMBER,
 })
 
 export function formatRole(role) {
-  return ROLE_LABELS[role] || role || 'Visitor'
+  return ROLE_LABELS[role] || role || 'Khách'
 }
 
 export const PERMISSIONS = Object.freeze({

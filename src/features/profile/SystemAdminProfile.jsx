@@ -21,13 +21,13 @@ export default function SystemAdminProfile({ user }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || "System Admin",
+    name: user?.name || "Quản trị hệ thống",
     email: user?.email || "admin@system",
   });
 
   useEffect(() => {
     setFormData({
-      name: user?.name || "System Admin",
+      name: user?.name || "Quản trị hệ thống",
       email: user?.email || "admin@system",
     });
   }, [user?.email, user?.name]);
@@ -61,7 +61,7 @@ export default function SystemAdminProfile({ user }) {
     const fullName = formData.name.trim();
     const emailAddress = formData.email.trim();
     if (!fullName || !emailAddress) {
-      error("Full name and email are required.");
+      error("Vui lòng nhập đầy đủ họ tên và email.");
       return;
     }
 
@@ -81,9 +81,9 @@ export default function SystemAdminProfile({ user }) {
         isLocked: updated.isLocked,
       });
       setEditing(false);
-      success("Profile updated successfully.");
+      success("Đã cập nhật hồ sơ.");
     } catch (requestError) {
-      error(requestError.message || "Unable to update the profile.");
+      error(requestError.message || "Không thể cập nhật hồ sơ.");
     } finally {
       setSaving(false);
     }
@@ -94,16 +94,16 @@ export default function SystemAdminProfile({ user }) {
   };
 
   const profileStats = [
-    { value: user?.username || "—", label: "Username" },
-    { value: "Technical Admin", label: "Role" },
-    { value: user?.isActive && !user?.isLocked ? "Active" : "Restricted", label: "Status" },
+    { value: user?.username || "-", label: "Tên đăng nhập" },
+    { value: "Quản trị kỹ thuật", label: "Vai trò" },
+    { value: user?.isActive && !user?.isLocked ? "Đang hoạt động" : "Bị hạn chế", label: "Trạng thái" },
   ];
 
   const details = [
     { label: "Email", value: formData.email, field: "email", icon: Mail },
-    { label: "Username", value: user?.username || "—", icon: UserRound, readonly: true },
-    { label: "Role", value: user?.roles?.map(formatRole).join(", ") || "System administrator", icon: ShieldCheck, readonly: true },
-    { label: "Status", value: user?.isActive && !user?.isLocked ? "Active" : "Restricted", icon: Check, readonly: true },
+    { label: "Tên đăng nhập", value: user?.username || "-", icon: UserRound, readonly: true },
+    { label: "Vai trò", value: user?.roles?.map(formatRole).join(", ") || "Quản trị hệ thống", icon: ShieldCheck, readonly: true },
+    { label: "Trạng thái", value: user?.isActive && !user?.isLocked ? "Đang hoạt động" : "Bị hạn chế", icon: Check, readonly: true },
   ];
 
   return (
@@ -113,12 +113,9 @@ export default function SystemAdminProfile({ user }) {
           <div>
             <span className="eyebrow">
               <Sparkles size={14} />
-              Personal workspace
+              Không gian cá nhân
             </span>
-            <h2 className="font-podium">CREATIVE PROFILE</h2>
-            <p>
-              A focused view of your identity, active work, and system presence.
-            </p>
+            <h2 className="font-podium">HỒ SƠ QUẢN TRỊ</h2>
           </div>
 
           <button
@@ -128,7 +125,7 @@ export default function SystemAdminProfile({ user }) {
             disabled={saving}
           >
             {editing ? <Check size={16} /> : <Pencil size={16} />}
-            {saving ? "Saving..." : editing ? "Save changes" : "Edit profile"}
+            {saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Chỉnh sửa hồ sơ"}
           </button>
         </div>
 
@@ -154,18 +151,18 @@ export default function SystemAdminProfile({ user }) {
                     value={formData.name}
                     onChange={(e) => handleChange("name", e.target.value)}
                     disabled={saving}
-                    aria-label="Full name"
+                    aria-label="Họ và tên"
                     style={{ background: 'transparent', color: 'white', fontSize: '31px', fontWeight: 'bold', border: 'none', borderBottom: '1px solid #8cecf5', outline: 'none', width: '100%', marginBottom: '5px' }}
                   />
                 ) : (
                   <h3 className="font-podium" style={{ textTransform: 'uppercase' }}>{formData.name}</h3>
                 )}
-                <p>{user?.roles?.map(formatRole).join(", ") || "System administrator"}</p>
+                <p>{user?.roles?.map(formatRole).join(", ") || "Quản trị hệ thống"}</p>
               </div>
             </div>
 
             <p className="profile-bio">
-              Technical administrator responsible for platform access, account administration, stability, and security.
+              Quản trị kỹ thuật phụ trách quyền truy cập, tài khoản, tính ổn định và bảo mật của hệ thống.
             </p>
 
             <div className="profile-stats">
@@ -193,30 +190,30 @@ export default function SystemAdminProfile({ user }) {
             <div className="visual-scanline" />
 
             <div className="visual-topline">
-              <span>VANGUARD / ADMIN 01</span>
+              <span>VANGUARD / QUẢN TRỊ 01</span>
               <span className="live-pill">
                 <i />
-                Live
+                Trực tuyến
               </span>
             </div>
 
             <div className="floating-card floating-card-main">
-              <span>Authenticated account</span>
+              <span>Tài khoản đã xác thực</span>
               <strong>{user?.username || "systemadmin@club.local"}</strong>
-              <small>Role-based access is enabled</small>
+              <small>Đã bật phân quyền theo vai trò</small>
             </div>
 
             <div className="floating-card floating-card-mini">
               <ShieldCheck size={18} />
               <div>
-                <strong>{user?.isActive && !user?.isLocked ? "Active" : "Restricted"}</strong>
-                <span>Account status</span>
+                <strong>{user?.isActive && !user?.isLocked ? "Đang hoạt động" : "Bị hạn chế"}</strong>
+                <span>Trạng thái tài khoản</span>
               </div>
             </div>
 
             <div className="visual-caption">
-              <span>Club Management System</span>
-              <strong className="font-podium">SECURE. SCALABLE. READY.</strong>
+              <span>Hệ thống quản lý câu lạc bộ</span>
+              <strong className="font-podium">AN TOÀN. ỔN ĐỊNH. SẴN SÀNG.</strong>
             </div>
           </div>
         </section>
@@ -225,8 +222,8 @@ export default function SystemAdminProfile({ user }) {
           <section className="detail-panel animate-fade-up-delay-2" style={{ gridColumn: "1 / -1" }}>
             <div className="panel-heading">
               <div>
-                <span className="panel-kicker">Identity details</span>
-                <h3>Profile information</h3>
+                <span className="panel-kicker">Thông tin định danh</span>
+                <h3>Thông tin hồ sơ</h3>
               </div>
               <ShieldCheck size={20} />
             </div>

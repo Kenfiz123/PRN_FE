@@ -4,13 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { useNotifications } from '../context/NotificationContext'
 import { useToast } from '../context/ToastContext'
+import { formatDateTime, formatRole } from '../locales/vi'
 
-function formatDate(value) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
+const formatDate = value => formatDateTime(value)
 
 function getRelatedPath(eventType = '') {
   if (eventType.startsWith('activity.')) return '/activities'
@@ -22,12 +18,11 @@ function getRelatedPath(eventType = '') {
 }
 
 function formatRecipient(notification) {
-  if (notification?.recipientUserId) return 'Personal notification'
+  if (notification?.recipientUserId) return 'Thông báo cá nhân'
   if (notification?.recipientRole) {
-    const role = notification.recipientRole.toLowerCase().replaceAll('_', ' ')
-    return `Role: ${role}`
+    return `Vai trò: ${formatRole(notification.recipientRole)}`
   }
-  return 'System notification'
+  return 'Thông báo hệ thống'
 }
 
 export default function NotificationsPage() {
@@ -47,7 +42,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (loadError) {
-      error(loadError.message || 'Unable to load notifications.')
+      error(loadError.message || 'Không thể tải thông báo.')
     }
   }, [error, loadError])
 
@@ -67,7 +62,7 @@ export default function NotificationsPage() {
     try {
       await markNotificationRead(notification.id)
     } catch (err) {
-      error(err.message || 'Unable to mark the notification as read.')
+      error(err.message || 'Không thể đánh dấu thông báo đã đọc.')
     } finally {
       setBusyId(null)
     }
@@ -78,9 +73,9 @@ export default function NotificationsPage() {
     setBusyId('all')
     try {
       await markAllNotificationsRead()
-      success('All notifications have been marked as read.')
+      success('Đã đánh dấu tất cả thông báo là đã đọc.')
     } catch (err) {
-      error(err.message || 'Unable to mark all notifications as read.')
+      error(err.message || 'Không thể đánh dấu tất cả thông báo đã đọc.')
     } finally {
       setBusyId(null)
     }
@@ -97,8 +92,7 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Notifications</h2>
-          <p className="mt-1 text-sm text-gray-400">{unreadCount} unread notifications</p>
+          <h2 className="text-2xl font-bold text-white">Thông báo</h2>
         </div>
         <button
           type="button"
@@ -106,15 +100,15 @@ export default function NotificationsPage() {
           disabled={unreadCount === 0 || Boolean(busyId)}
           className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {busyId === 'all' ? 'Processing...' : 'Mark all as read'}
+          {busyId === 'all' ? 'Đang xử lý...' : 'Đánh dấu tất cả đã đọc'}
         </button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
-          ['all', `All (${notifications.length})`],
-          ['unread', `Unread (${unreadCount})`],
-          ['read', `Read (${notifications.length - unreadCount})`],
+          ['all', `Tất cả (${notifications.length})`],
+          ['unread', `Chưa đọc (${unreadCount})`],
+          ['read', `Đã đọc (${notifications.length - unreadCount})`],
         ].map(([value, label]) => (
           <button
             key={value}
@@ -137,7 +131,7 @@ export default function NotificationsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-700 py-14 text-center text-gray-500">
-          No notifications in this group.
+          Không có thông báo trong nhóm này.
         </div>
       ) : (
         <div className="space-y-3">
@@ -179,7 +173,7 @@ export default function NotificationsPage() {
       <Modal
         isOpen={Boolean(selectedNotification)}
         onClose={() => setSelectedId(null)}
-        title="Notification Details"
+        title="Chi tiết thông báo"
         size="md"
       >
         {selectedNotification && (
@@ -196,7 +190,7 @@ export default function NotificationsPage() {
                   ? 'bg-neutral-100 text-neutral-600'
                   : 'bg-amber-100 text-amber-700'
               }`}>
-                {selectedNotification.isRead ? 'Read' : 'Unread'}
+                {selectedNotification.isRead ? 'Đã đọc' : 'Chưa đọc'}
               </span>
             </div>
 
@@ -208,19 +202,19 @@ export default function NotificationsPage() {
 
             <dl className="grid gap-4 rounded-xl border border-neutral-200 p-4 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Received</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Thời gian nhận</dt>
                 <dd className="mt-1 text-sm font-medium text-neutral-800">{formatDate(selectedNotification.createdAtUtc)}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Recipient</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Người nhận</dt>
                 <dd className="mt-1 text-sm font-medium capitalize text-neutral-800">{formatRecipient(selectedNotification)}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Notification ID</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Mã thông báo</dt>
                 <dd className="mt-1 text-sm font-medium text-neutral-800">#{selectedNotification.id}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Event type</dt>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Loại sự kiện</dt>
                 <dd className="mt-1 text-sm font-medium text-neutral-800">{selectedNotification.eventType}</dd>
               </div>
             </dl>
@@ -231,7 +225,7 @@ export default function NotificationsPage() {
                 onClick={() => setSelectedId(null)}
                 className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
               >
-                Close
+                Đóng
               </button>
               {relatedPath && (
                 <button
@@ -242,7 +236,7 @@ export default function NotificationsPage() {
                   }}
                   className="rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500"
                 >
-                  Open related page
+                  Mở trang liên quan
                 </button>
               )}
             </div>

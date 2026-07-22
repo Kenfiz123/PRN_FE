@@ -4,6 +4,7 @@ import Modal from '../components/Modal'
 import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { formatActivityStatus, formatAttendanceStatus, formatDateTime } from '../locales/vi'
 
 const emptyForm = {
   kind: 'ONE_TIME',
@@ -17,7 +18,7 @@ const emptyForm = {
 }
 
 const WEEK_DAYS = [
-  [1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [7, 'Sun'],
+  [1, 'T2'], [2, 'T3'], [3, 'T4'], [4, 'T5'], [5, 'T6'], [6, 'T7'], [7, 'CN'],
 ]
 
 function MeetingDayPicker({ value, onChange }) {
@@ -35,12 +36,7 @@ function normalizeStatus(status) {
   return status?.toUpperCase() || 'PLANNED'
 }
 
-function formatDate(value) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
+const formatDate = value => formatDateTime(value)
 
 function FormField({ label, children }) {
   return (
@@ -78,7 +74,7 @@ export default function ActivitiesPage() {
       const result = await api.getActivities()
       setActivities(Array.isArray(result) ? result : [])
     } catch (err) {
-      error(err.message || 'Unable to load activities.')
+      error(err.message || 'Không thể tải danh sách hoạt động.')
     } finally {
       setIsLoading(false)
     }
@@ -96,7 +92,7 @@ export default function ActivitiesPage() {
     setSummaryLoading(true)
     api.getMyActivityAttendance(selectedActivity.id)
       .then(setAttendanceSummary)
-      .catch(err => error(err.message || 'Unable to load attendance history.'))
+      .catch(err => error(err.message || 'Không thể tải lịch sử điểm danh.'))
       .finally(() => setSummaryLoading(false))
   }, [selectedActivity, error])
 
@@ -118,9 +114,9 @@ export default function ActivitiesPage() {
     try {
       const updated = await api.registerParticipant(activity.id, null, user?.name)
       setActivities(current => current.map(item => item.id === activity.id ? updated : item))
-      success('Activity registration completed.')
+      success('Đã đăng ký tham gia hoạt động.')
     } catch (err) {
-      error(err.message || 'Unable to register for this activity.')
+      error(err.message || 'Không thể đăng ký hoạt động này.')
     } finally {
       setBusyId(null)
     }
@@ -133,9 +129,9 @@ export default function ActivitiesPage() {
       const updated = await api.completeActivity(activity.id)
       setActivities(current => current.map(item => item.id === activity.id ? updated : item))
       setSelectedActivity(updated)
-      success('Activity marked as completed.')
+      success('Đã đánh dấu hoạt động hoàn thành.')
     } catch (err) {
-      error(err.message || 'Unable to complete this activity.')
+      error(err.message || 'Không thể hoàn thành hoạt động này.')
     } finally {
       setBusyId(null)
     }
@@ -150,9 +146,9 @@ export default function ActivitiesPage() {
       setSelectedActivity(updated)
       const summary = await api.getMyActivityAttendance(activity.id)
       setAttendanceSummary(summary)
-      success('Attendance recorded for today (Vietnam time).')
+      success('Đã ghi nhận điểm danh hôm nay theo giờ Việt Nam.')
     } catch (err) {
-      error(err.message || 'Attendance is not available today.')
+      error(err.message || 'Hôm nay không mở điểm danh.')
     } finally {
       setBusyId(null)
     }
@@ -162,7 +158,7 @@ export default function ActivitiesPage() {
     event.preventDefault()
     if (!editingSchedule || busyId) return
     if (!editingSchedule.meetingDays.length) {
-      error('Select at least one day from Monday to Sunday.')
+      error('Vui lòng chọn ít nhất một ngày trong tuần.')
       return
     }
     setBusyId(`schedule-${editingSchedule.id}`)
@@ -179,9 +175,9 @@ export default function ActivitiesPage() {
       setActivities(current => current.map(item => item.id === updated.id ? updated : item))
       setSelectedActivity(updated)
       setEditingSchedule(null)
-      success('Weekly meeting schedule updated.')
+      success('Đã cập nhật lịch họp hằng tuần.')
     } catch (err) {
-      error(err.message || 'Unable to update the weekly schedule.')
+      error(err.message || 'Không thể cập nhật lịch họp hằng tuần.')
     } finally {
       setBusyId(null)
     }
@@ -194,11 +190,11 @@ export default function ActivitiesPage() {
     const isWeekly = formData.kind === 'WEEKLY'
     if (!club || !formData.title.trim() || !formData.location.trim()
       || (isWeekly ? formData.meetingDays.length === 0 : (!formData.startTime || !formData.endTime))) {
-      error('Please provide the club, title, schedule, and location.')
+      error('Vui lòng nhập câu lạc bộ, tên, lịch và địa điểm.')
       return
     }
     if (!isWeekly && new Date(formData.endTime) <= new Date(formData.startTime)) {
-      error('The end time must be later than the start time.')
+      error('Thời gian kết thúc phải sau thời gian bắt đầu.')
       return
     }
 
@@ -217,9 +213,9 @@ export default function ActivitiesPage() {
       setActivities(current => [...current, created].sort((a, b) => new Date(a.startTimeUtc) - new Date(b.startTimeUtc)))
       setShowCreate(false)
       setFormData(emptyForm)
-      success(isWeekly ? 'Weekly meeting schedule created.' : 'Activity created successfully.')
+      success(isWeekly ? 'Đã tạo lịch họp hằng tuần.' : 'Đã tạo hoạt động.')
     } catch (err) {
-      error(err.message || 'Unable to create the activity.')
+      error(err.message || 'Không thể tạo hoạt động.')
     } finally {
       setBusyId(null)
     }
@@ -229,8 +225,7 @@ export default function ActivitiesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Club Activities</h2>
-          <p className="mt-1 text-sm text-gray-400">Only activities from clubs you can access are displayed.</p>
+          <h2 className="text-2xl font-bold text-white">Hoạt động câu lạc bộ</h2>
         </div>
         {managedClubs.length > 0 && (
           <button
@@ -238,17 +233,17 @@ export default function ActivitiesPage() {
             onClick={() => setShowCreate(true)}
             className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 font-semibold text-white"
           >
-            Create activity or schedule
+            Tạo hoạt động hoặc lịch họp
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          ['Total activities', activities.length, 'text-cyan-300'],
-          ['Upcoming', activities.filter(item => normalizeStatus(item.status) !== 'COMPLETED' && new Date(item.startTimeUtc) > new Date()).length, 'text-purple-300'],
-          ['Completed', activities.filter(item => normalizeStatus(item.status) === 'COMPLETED').length, 'text-emerald-300'],
-          ['Weekly schedules', activities.filter(item => item.meetingDays?.length).length, 'text-amber-300'],
+          ['Tổng hoạt động', activities.length, 'text-cyan-300'],
+          ['Sắp diễn ra', activities.filter(item => normalizeStatus(item.status) !== 'COMPLETED' && new Date(item.startTimeUtc) > new Date()).length, 'text-purple-300'],
+          ['Đã hoàn thành', activities.filter(item => normalizeStatus(item.status) === 'COMPLETED').length, 'text-emerald-300'],
+          ['Lịch họp hằng tuần', activities.filter(item => item.meetingDays?.length).length, 'text-amber-300'],
         ].map(([label, value, color]) => (
           <div key={label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className={`text-3xl font-bold ${color}`}>{value}</p>
@@ -259,22 +254,22 @@ export default function ActivitiesPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
-          aria-label="Search activities"
+          aria-label="Tìm kiếm hoạt động"
           value={searchQuery}
           onChange={event => setSearchQuery(event.target.value)}
-          placeholder="Search activities, clubs, or locations..."
+          placeholder="Tìm hoạt động, câu lạc bộ hoặc địa điểm..."
           className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-cyan-500"
         />
         <select
-          aria-label="Filter activities by status"
+          aria-label="Lọc hoạt động theo trạng thái"
           value={statusFilter}
           onChange={event => setStatusFilter(event.target.value)}
           className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none"
         >
-          <option value="ALL">All statuses</option>
-          <option value="SCHEDULED">Scheduled</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
+          <option value="ALL">Tất cả trạng thái</option>
+          <option value="SCHEDULED">Đã lên lịch</option>
+          <option value="COMPLETED">Đã hoàn thành</option>
+          <option value="CANCELLED">Đã hủy</option>
         </select>
       </div>
 
@@ -284,7 +279,7 @@ export default function ActivitiesPage() {
         </div>
       ) : filteredActivities.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-gray-500">
-          No activities are available for your current access.
+          Chưa có hoạt động phù hợp với quyền truy cập của bạn.
         </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -305,20 +300,20 @@ export default function ActivitiesPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-semibold text-cyan-300">
-                    {activity.clubName} · {isWeekly ? 'Weekly meeting' : 'Activity'}
+                    {activity.clubName}, {isWeekly ? 'Họp hằng tuần' : 'Hoạt động'}
                   </span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                     status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-purple-500/15 text-purple-300'
                   }`}>
-                    {activity.status}
+                    {formatActivityStatus(activity.status)}
                   </span>
                 </div>
                 <h3 className="mt-4 text-lg font-bold text-white">{activity.title}</h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-400">{activity.description || 'No description provided.'}</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-400">{activity.description || 'Chưa có mô tả.'}</p>
                 <dl className="mt-4 space-y-2 border-t border-slate-800 pt-4 text-sm">
-                  <div className="flex justify-between gap-3"><dt className="text-gray-500">{isWeekly ? 'Meeting days' : 'Starts'}</dt><dd className="text-right text-gray-200">{isWeekly ? formatMeetingDays(activity.meetingDays) : formatDate(activity.startTimeUtc)}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-gray-500">Location</dt><dd className="text-right text-gray-200">{activity.location}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-gray-500">Registrations</dt><dd className="font-semibold text-white">{activity.participants?.length || 0}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-gray-500">{isWeekly ? 'Ngày họp' : 'Bắt đầu'}</dt><dd className="text-right text-gray-200">{isWeekly ? formatMeetingDays(activity.meetingDays) : formatDate(activity.startTimeUtc)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-gray-500">Địa điểm</dt><dd className="text-right text-gray-200">{activity.location}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-gray-500">Đã đăng ký</dt><dd className="font-semibold text-white">{activity.participants?.length || 0}</dd></div>
                 </dl>
                 <div className="mt-auto flex gap-2 pt-5">
                   <button
@@ -326,7 +321,7 @@ export default function ActivitiesPage() {
                     onClick={() => setSelectedActivity(activity)}
                     className="flex-1 rounded-xl border border-slate-700 px-3 py-2.5 text-sm font-semibold text-gray-300"
                   >
-                    Details
+                    Chi tiết
                   </button>
                   {isWeekly && status !== 'COMPLETED' && canParticipate ? (
                     <button
@@ -335,7 +330,7 @@ export default function ActivitiesPage() {
                       disabled={busyId === `check-in-${activity.id}`}
                       className="flex-1 rounded-xl bg-emerald-500/15 px-3 py-2.5 text-sm font-semibold text-emerald-300 disabled:opacity-45"
                     >
-                      {busyId === `check-in-${activity.id}` ? 'Checking in...' : 'Check in today'}
+                      {busyId === `check-in-${activity.id}` ? 'Đang điểm danh...' : 'Điểm danh hôm nay'}
                     </button>
                   ) : status !== 'COMPLETED' && canParticipate && (
                     <button
@@ -344,7 +339,7 @@ export default function ActivitiesPage() {
                       disabled={registered || busyId === activity.id}
                       className="flex-1 rounded-xl bg-cyan-500/15 px-3 py-2.5 text-sm font-semibold text-cyan-300 disabled:opacity-45"
                     >
-                      {registered ? 'Registered' : busyId === activity.id ? 'Processing...' : 'Join'}
+                      {registered ? 'Đã đăng ký' : busyId === activity.id ? 'Đang xử lý...' : 'Tham gia'}
                     </button>
                   )}
                 </div>
@@ -354,26 +349,26 @@ export default function ActivitiesPage() {
         </div>
       )}
 
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Activity or Weekly Schedule" size="lg">
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Tạo hoạt động hoặc lịch họp hằng tuần" size="lg">
         <form onSubmit={createActivity} className="space-y-4">
-          <FormField label="Type *">
+          <FormField label="Loại *">
             <select value={formData.kind} onChange={event => setFormData(current => ({ ...current, kind: event.target.value }))} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900">
-              <option value="ONE_TIME">One-time activity</option>
-              <option value="WEEKLY">Weekly club meeting</option>
+              <option value="ONE_TIME">Hoạt động một lần</option>
+              <option value="WEEKLY">Họp câu lạc bộ hằng tuần</option>
             </select>
           </FormField>
-          <FormField label="Club *">
+          <FormField label="Câu lạc bộ *">
             <select
               value={formData.clubId}
               onChange={event => setFormData(current => ({ ...current, clubId: event.target.value }))}
               required
               className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900"
             >
-              <option value="">Select a club you manage</option>
+              <option value="">Chọn câu lạc bộ bạn quản lý</option>
               {managedClubs.map(club => <option key={club.clubId} value={club.clubId}>{club.clubName}</option>)}
             </select>
           </FormField>
-          <FormField label="Activity name *">
+          <FormField label="Tên hoạt động *">
             <input
               value={formData.title}
               onChange={event => setFormData(current => ({ ...current, title: event.target.value }))}
@@ -382,7 +377,7 @@ export default function ActivitiesPage() {
               className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900"
             />
           </FormField>
-          <FormField label="Description">
+          <FormField label="Mô tả">
             <textarea
               value={formData.description}
               onChange={event => setFormData(current => ({ ...current, description: event.target.value }))}
@@ -391,21 +386,21 @@ export default function ActivitiesPage() {
             />
           </FormField>
           {formData.kind === 'WEEKLY' ? (
-            <FormField label="Weekly meeting days (Vietnam time) *">
+            <FormField label="Ngày họp hằng tuần theo giờ Việt Nam *">
               <MeetingDayPicker value={formData.meetingDays} onChange={meetingDays => setFormData(current => ({ ...current, meetingDays }))} />
-              <span className="mt-2 block text-xs font-normal text-neutral-500">Members can check in once on each selected weekday.</span>
+              <span className="mt-2 block text-xs font-normal text-neutral-500">Thành viên được điểm danh một lần vào mỗi ngày đã chọn.</span>
             </FormField>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm font-semibold text-neutral-700">Start time
+              <label className="text-sm font-semibold text-neutral-700">Thời gian bắt đầu
                 <input type="datetime-local" value={formData.startTime} onChange={event => setFormData(current => ({ ...current, startTime: event.target.value }))} required className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
               </label>
-              <label className="text-sm font-semibold text-neutral-700">End time
+              <label className="text-sm font-semibold text-neutral-700">Thời gian kết thúc
                 <input type="datetime-local" value={formData.endTime} onChange={event => setFormData(current => ({ ...current, endTime: event.target.value }))} required className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-neutral-900" />
               </label>
             </div>
           )}
-          <FormField label="Location *">
+          <FormField label="Địa điểm *">
             <input
               value={formData.location}
               onChange={event => setFormData(current => ({ ...current, location: event.target.value }))}
@@ -415,51 +410,51 @@ export default function ActivitiesPage() {
             />
           </FormField>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button>
             <button type="submit" disabled={busyId === 'create'} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">
-              {busyId === 'create' ? 'Creating...' : formData.kind === 'WEEKLY' ? 'Create schedule' : 'Create activity'}
+              {busyId === 'create' ? 'Đang tạo...' : formData.kind === 'WEEKLY' ? 'Tạo lịch họp' : 'Tạo hoạt động'}
             </button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={Boolean(selectedActivity)} onClose={() => setSelectedActivity(null)} title={selectedActivity?.title || 'Activity Details'} size="lg">
+      <Modal isOpen={Boolean(selectedActivity)} onClose={() => setSelectedActivity(null)} title={selectedActivity?.title || 'Chi tiết hoạt động'} size="lg">
         {selectedActivity && (
           <div className="space-y-4 text-neutral-700">
-            <p>{selectedActivity.description || 'No description provided.'}</p>
+            <p>{selectedActivity.description || 'Chưa có mô tả.'}</p>
             <dl className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Club</dt><dd className="mt-1 font-semibold">{selectedActivity.clubName}</dd></div>
-              <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Location</dt><dd className="mt-1 font-semibold">{selectedActivity.location}</dd></div>
+              <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Câu lạc bộ</dt><dd className="mt-1 font-semibold">{selectedActivity.clubName}</dd></div>
+              <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Địa điểm</dt><dd className="mt-1 font-semibold">{selectedActivity.location}</dd></div>
               {selectedActivity.meetingDays?.length ? (
-                <div className="rounded-lg bg-neutral-50 p-3 sm:col-span-2"><dt className="text-xs text-neutral-500">Weekly meeting days · Vietnam time</dt><dd className="mt-1 font-semibold">{formatMeetingDays(selectedActivity.meetingDays)}</dd></div>
+                <div className="rounded-lg bg-neutral-50 p-3 sm:col-span-2"><dt className="text-xs text-neutral-500">Ngày họp hằng tuần, giờ Việt Nam</dt><dd className="mt-1 font-semibold">{formatMeetingDays(selectedActivity.meetingDays)}</dd></div>
               ) : <>
-                <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Starts</dt><dd className="mt-1 font-semibold">{formatDate(selectedActivity.startTimeUtc)}</dd></div>
-                <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Ends</dt><dd className="mt-1 font-semibold">{formatDate(selectedActivity.endTimeUtc)}</dd></div>
+                <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Bắt đầu</dt><dd className="mt-1 font-semibold">{formatDate(selectedActivity.startTimeUtc)}</dd></div>
+                <div className="rounded-lg bg-neutral-50 p-3"><dt className="text-xs text-neutral-500">Kết thúc</dt><dd className="mt-1 font-semibold">{formatDate(selectedActivity.endTimeUtc)}</dd></div>
               </>}
             </dl>
             {selectedActivity.meetingDays?.length && (
               <section className="space-y-3 rounded-xl border border-neutral-200 p-4">
-                <div className="flex items-center justify-between"><h3 className="font-bold">My attendance</h3>{summaryLoading && <span className="text-xs text-neutral-500">Loading...</span>}</div>
+                <div className="flex items-center justify-between"><h3 className="font-bold">Điểm danh của tôi</h3>{summaryLoading && <span className="text-xs text-neutral-500">Đang tải...</span>}</div>
                 {attendanceSummary && <>
                   <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-lg bg-cyan-50 p-3"><p className="text-xl font-bold text-cyan-700">{attendanceSummary.scheduledDays}</p><p className="text-xs text-neutral-500">Scheduled</p></div>
-                    <div className="rounded-lg bg-emerald-50 p-3"><p className="text-xl font-bold text-emerald-700">{attendanceSummary.attendedDays}</p><p className="text-xs text-neutral-500">Attended</p></div>
-                    <div className="rounded-lg bg-purple-50 p-3"><p className="text-xl font-bold text-purple-700">{Number(attendanceSummary.attendanceRate).toFixed(2)}%</p><p className="text-xs text-neutral-500">Rate</p></div>
+                    <div className="rounded-lg bg-cyan-50 p-3"><p className="text-xl font-bold text-cyan-700">{attendanceSummary.scheduledDays}</p><p className="text-xs text-neutral-500">Buổi đã lên lịch</p></div>
+                    <div className="rounded-lg bg-emerald-50 p-3"><p className="text-xl font-bold text-emerald-700">{attendanceSummary.attendedDays}</p><p className="text-xs text-neutral-500">Buổi có mặt</p></div>
+                    <div className="rounded-lg bg-purple-50 p-3"><p className="text-xl font-bold text-purple-700">{Number(attendanceSummary.attendanceRate).toFixed(2)}%</p><p className="text-xs text-neutral-500">Tỷ lệ</p></div>
                   </div>
                   <p className={`rounded-lg p-3 text-sm font-semibold ${attendanceSummary.canCheckInToday ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-600'}`}>
-                    {attendanceSummary.alreadyCheckedInToday ? 'You have already checked in today.' : attendanceSummary.isScheduledToday ? 'Attendance is open today.' : 'Today is not a scheduled meeting day.'}
+                    {attendanceSummary.alreadyCheckedInToday ? 'Bạn đã điểm danh hôm nay.' : attendanceSummary.isScheduledToday ? 'Điểm danh đang mở hôm nay.' : 'Hôm nay không phải ngày họp theo lịch.'}
                   </p>
                   <div className="max-h-48 divide-y divide-neutral-200 overflow-y-auto rounded-lg border border-neutral-200">
-                    {attendanceSummary.history.length ? attendanceSummary.history.map(item => <div key={item.id} className="flex items-center justify-between p-3 text-sm"><span>{new Date(`${item.attendanceDate}T00:00:00`).toLocaleDateString('en-US')}</span><span className="font-semibold text-emerald-700">{item.status}</span></div>) : <p className="p-4 text-center text-sm text-neutral-500">No attendance history yet.</p>}
+                    {attendanceSummary.history.length ? attendanceSummary.history.map(item => <div key={item.id} className="flex items-center justify-between p-3 text-sm"><span>{new Date(`${item.attendanceDate}T00:00:00`).toLocaleDateString('vi-VN')}</span><span className="font-semibold text-emerald-700">{formatAttendanceStatus(item.status)}</span></div>) : <p className="p-4 text-center text-sm text-neutral-500">Chưa có lịch sử điểm danh.</p>}
                   </div>
                   <button type="button" onClick={() => checkIn(selectedActivity)} disabled={!attendanceSummary.canCheckInToday || busyId === `check-in-${selectedActivity.id}`} className="w-full rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-40">
-                    {busyId === `check-in-${selectedActivity.id}` ? 'Checking in...' : attendanceSummary.alreadyCheckedInToday ? 'Already checked in' : 'Check in today'}
+                    {busyId === `check-in-${selectedActivity.id}` ? 'Đang điểm danh...' : attendanceSummary.alreadyCheckedInToday ? 'Đã điểm danh' : 'Điểm danh hôm nay'}
                   </button>
                 </>}
               </section>
             )}
             {accessByClub.get(selectedActivity.clubId)?.isManager && selectedActivity.meetingDays?.length > 0 && (
-              <button type="button" onClick={() => { setEditingSchedule({ ...selectedActivity, meetingDays: [...selectedActivity.meetingDays] }); setSelectedActivity(null) }} className="w-full rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white">Edit weekly schedule</button>
+              <button type="button" onClick={() => { setEditingSchedule({ ...selectedActivity, meetingDays: [...selectedActivity.meetingDays] }); setSelectedActivity(null) }} className="w-full rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white">Chỉnh sửa lịch họp hằng tuần</button>
             )}
             {accessByClub.get(selectedActivity.clubId)?.isManager && normalizeStatus(selectedActivity.status) !== 'COMPLETED' && (
               <button
@@ -468,18 +463,18 @@ export default function ActivitiesPage() {
                 disabled={busyId === selectedActivity.id}
                 className="w-full rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
               >
-                {busyId === selectedActivity.id ? 'Processing...' : 'Mark as completed'}
+                {busyId === selectedActivity.id ? 'Đang xử lý...' : 'Đánh dấu hoàn thành'}
               </button>
             )}
           </div>
         )}
       </Modal>
 
-      <Modal isOpen={Boolean(editingSchedule)} onClose={() => setEditingSchedule(null)} title="Edit Weekly Meeting Schedule" size="lg">
+      <Modal isOpen={Boolean(editingSchedule)} onClose={() => setEditingSchedule(null)} title="Chỉnh sửa lịch họp hằng tuần" size="lg">
         {editingSchedule && <form onSubmit={saveSchedule} className="space-y-5">
-          <div><p className="font-semibold text-neutral-900">{editingSchedule.title}</p><p className="text-sm text-neutral-500">Select every weekday when members are allowed to check in.</p></div>
+          <div><p className="font-semibold text-neutral-900">{editingSchedule.title}</p><p className="text-sm text-neutral-500">Chọn các ngày thành viên được phép điểm danh.</p></div>
           <MeetingDayPicker value={editingSchedule.meetingDays} onChange={meetingDays => setEditingSchedule(current => ({ ...current, meetingDays }))} />
-          <div className="flex gap-3"><button type="button" onClick={() => setEditingSchedule(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button><button type="submit" disabled={busyId === `schedule-${editingSchedule.id}`} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === `schedule-${editingSchedule.id}` ? 'Saving...' : 'Save schedule'}</button></div>
+          <div className="flex gap-3"><button type="button" onClick={() => setEditingSchedule(null)} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Hủy</button><button type="submit" disabled={busyId === `schedule-${editingSchedule.id}`} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busyId === `schedule-${editingSchedule.id}` ? 'Đang lưu...' : 'Lưu lịch họp'}</button></div>
         </form>}
       </Modal>
     </div>

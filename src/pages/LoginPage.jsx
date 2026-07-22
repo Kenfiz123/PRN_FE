@@ -27,10 +27,10 @@ export default function LoginPage() {
   const validate = () => {
     const newErrors = {}
     if (!formData.email) {
-      newErrors.email = 'Email or username is required'
+      newErrors.email = 'Vui lòng nhập email hoặc tên đăng nhập.'
     }
     if (!formData.password) {
-      newErrors.password = 'Password is required'
+      newErrors.password = 'Vui lòng nhập mật khẩu.'
     }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -43,10 +43,10 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       await login(formData.email, formData.password)
-      success('Welcome back to ClubReportHub!')
+      success('Chào mừng bạn quay lại ClubReportHub!')
       navigate('/dashboard')
     } catch (err) {
-      error(err.message || 'Invalid credentials. Please try again.')
+      error(err.message || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }
@@ -110,15 +110,6 @@ export default function LoginPage() {
             >
               ClubReportHub
             </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-sm"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Access your club management portal
-            </motion.p>
           </div>
 
           {/* Form */}
@@ -130,7 +121,7 @@ export default function LoginPage() {
               transition={{ delay: 0.4 }}
             >
               <label htmlFor="login-identifier" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                Email or Username
+                Email hoặc tên đăng nhập
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none" style={{ color: 'var(--text-muted)' }}>
@@ -192,7 +183,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Enter your password"
+                  placeholder="Nhập mật khẩu"
                   className="w-full text-white placeholder-gray-500 outline-none transition-all"
                   style={{
                     padding: '14px 18px 14px 3rem',
@@ -232,10 +223,10 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Authenticating...
+                  Đang xác thực...
                 </span>
               ) : (
-                <span>Access System</span>
+                <span>Đăng nhập</span>
               )}
             </motion.button>
           </form>
@@ -249,18 +240,15 @@ export default function LoginPage() {
             style={{ borderTop: '1px solid var(--border-color)' }}
           >
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              New to ClubReportHub?{' '}
+              Chưa có tài khoản?{' '}
               <Link to="/register" className="font-medium" style={{ color: 'var(--neon-cyan)' }}>
-                Create Account
+                Tạo tài khoản
               </Link>
             </p>
           </motion.div>
         </div>
 
         {/* Version */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          ClubReportHub v2.0.0
-        </div>
       </motion.div>
     </div>
   )

@@ -7,17 +7,17 @@ import { Menu } from 'lucide-react'
 import { formatRole, PERMISSIONS } from '../auth/permissions'
 
 const SEARCH_DESTINATIONS = [
-  { label: 'Dashboard', path: '/dashboard', permission: PERMISSIONS.VIEW_DASHBOARD, keywords: 'overview home' },
-  { label: 'Clubs', path: '/clubs', permission: PERMISSIONS.VIEW_CLUBS, keywords: 'members applications' },
-  { label: 'Reports', path: '/reports', permission: PERMISSIONS.VIEW_REPORTS, keywords: 'kpi deadlines' },
-  { label: 'Activities', path: '/activities', permission: PERMISSIONS.VIEW_ACTIVITIES, keywords: 'events schedule' },
-  { label: 'Finance', path: '/finance', permission: PERMISSIONS.VIEW_FINANCE, keywords: 'budget settlements' },
-  { label: 'Notifications', path: '/notifications', permission: PERMISSIONS.VIEW_NOTIFICATIONS, keywords: 'alerts unread' },
-  { label: 'Profile', path: '/profile', permission: PERMISSIONS.VIEW_PROFILE, keywords: 'account settings' },
-  { label: 'Users', path: '/users', permission: PERMISSIONS.MANAGE_USERS, keywords: 'accounts roles' },
+  { label: 'Tổng quan', path: '/dashboard', permission: PERMISSIONS.VIEW_DASHBOARD, keywords: 'dashboard tổng quan trang chủ' },
+  { label: 'Câu lạc bộ', path: '/clubs', permission: PERMISSIONS.VIEW_CLUBS, keywords: 'club thành viên đơn đăng ký' },
+  { label: 'Báo cáo', path: '/reports', permission: PERMISSIONS.VIEW_REPORTS, keywords: 'report chỉ số hạn nộp' },
+  { label: 'Hoạt động', path: '/activities', permission: PERMISSIONS.VIEW_ACTIVITIES, keywords: 'activity sự kiện lịch' },
+  { label: 'Tài chính', path: '/finance', permission: PERMISSIONS.VIEW_FINANCE, keywords: 'budget quyết toán' },
+  { label: 'Thông báo', path: '/notifications', permission: PERMISSIONS.VIEW_NOTIFICATIONS, keywords: 'alert chưa đọc' },
+  { label: 'Hồ sơ', path: '/profile', permission: PERMISSIONS.VIEW_PROFILE, keywords: 'tài khoản cài đặt' },
+  { label: 'Người dùng', path: '/users', permission: PERMISSIONS.MANAGE_USERS, keywords: 'tài khoản vai trò' },
 ]
 
-export default function Header({ title, subtitle, onMenuClick }) {
+export default function Header({ title, onMenuClick }) {
   const navigate = useNavigate()
   const { user, logout, hasPermission } = useAuth()
   const { unreadCount } = useNotifications()
@@ -72,13 +72,13 @@ export default function Header({ title, subtitle, onMenuClick }) {
     }
   }
 
-  const currentTime = now.toLocaleTimeString('en-US', {
+  const currentTime = now.toLocaleTimeString('vi-VN', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true
+    hour12: false,
   })
 
-  const currentDate = now.toLocaleDateString('en-US', {
+  const currentDate = now.toLocaleDateString('vi-VN', {
     weekday: 'short',
     month: 'short',
     day: 'numeric'
@@ -101,17 +101,14 @@ export default function Header({ title, subtitle, onMenuClick }) {
         <button
           type="button"
           onClick={onMenuClick}
-          aria-label="Open navigation menu"
-          title="Open navigation menu"
+          aria-label="Mở menu điều hướng"
+          title="Mở menu điều hướng"
           className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
         >
           <Menu size={20} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">{title || 'Dashboard'}</h1>
-          {subtitle && (
-            <p className="text-[11px] text-gray-400 mt-0.5 font-medium tracking-wide uppercase">{subtitle}</p>
-          )}
+          <h1 className="text-xl font-bold text-white tracking-tight">{title || 'Tổng quan'}</h1>
         </div>
       </motion.div>
 
@@ -129,8 +126,8 @@ export default function Header({ title, subtitle, onMenuClick }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Search pages..."
-            aria-label="Search pages"
+            placeholder="Tìm kiếm trang..."
+            aria-label="Tìm kiếm trang"
             autoComplete="off"
             className="w-full pl-10 pr-12 py-2.5 bg-white/[0.03] border border-white/5 rounded-[12px] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#83effa]/30 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#83effa]/20 transition-all"
           />
@@ -150,10 +147,10 @@ export default function Header({ title, subtitle, onMenuClick }) {
                   className="flex w-full items-center justify-between px-4 py-3 text-left text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
                 >
                   <span>{item.label}</span>
-                  <span className="text-xs text-gray-600">Open</span>
+                  <span className="text-xs text-gray-600">Mở</span>
                 </button>
               )) : (
-                <p className="px-4 py-3 text-sm text-gray-500">No matching pages</p>
+                <p className="px-4 py-3 text-sm text-gray-500">Không tìm thấy trang phù hợp</p>
               )}
             </div>
           )}
@@ -181,8 +178,8 @@ export default function Header({ title, subtitle, onMenuClick }) {
           transition={{ type: 'spring', stiffness: 300 }}
           className="relative p-2 rounded-xl text-gray-400 hover:text-[#83effa] hover:bg-[#83effa]/10 transition-all border border-transparent hover:border-[#83effa]/20"
           onClick={() => navigate('/notifications')}
-          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-          title="Notifications"
+          aria-label={unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : 'Thông báo'}
+          title="Thông báo"
         >
           <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -205,7 +202,7 @@ export default function Header({ title, subtitle, onMenuClick }) {
             type="button"
             onClick={() => setShowProfileMenu(current => !current)}
             className="relative block cursor-pointer"
-            aria-label="Open account menu"
+            aria-label="Mở menu tài khoản"
             aria-expanded={showProfileMenu}
           >
             <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-[#bff8ff] via-[#75e6f3] to-[#95a7ff] flex items-center justify-center font-bold text-[10px] text-[#081017] shadow-lg shadow-cyan-500/20">
@@ -239,13 +236,13 @@ export default function Header({ title, subtitle, onMenuClick }) {
                     <svg className="w-4 h-4 text-[#83effa]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    Profile
+                    Hồ sơ
                   </Link>
                   <button type="button" onClick={handleLogout} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[12px] font-medium text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 transition-colors">
                     <svg className="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    Sign out
+                    Đăng xuất
                   </button>
                 </div>
               </motion.div>

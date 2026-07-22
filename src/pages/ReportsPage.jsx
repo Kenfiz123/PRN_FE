@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { PERMISSIONS } from '../auth/permissions'
 import ReportStatusBadge, { normalizeReportStatus, reportStatusLabel } from '../components/reports/ReportStatusBadge'
+import { formatDate as formatViDate, formatReportType } from '../locales/vi'
 
 const FILTERS = ['ALL', 'DRAFT', 'SUBMITTED', 'UNDERREVIEW', 'APPROVED', 'REJECTED']
 
@@ -16,7 +17,7 @@ function asDate(value) {
 
 function formatDate(value) {
   const date = asDate(value)
-  return date ? date.toLocaleDateString('en-GB') : 'Not updated'
+  return date ? formatViDate(date) : 'Chưa cập nhật'
 }
 
 function daysUntil(value) {
@@ -73,7 +74,7 @@ export default function ReportsPage() {
       setReports(Array.isArray(listResult?.items) ? listResult.items : Array.isArray(listResult) ? listResult : [])
       setSummary(summaryResult || null)
     } catch (err) {
-      error(err.message || 'Unable to load reports.')
+      error(err.message || 'Không thể tải danh sách báo cáo.')
     } finally {
       setIsLoading(false)
     }
@@ -119,25 +120,23 @@ export default function ReportsPage() {
   }
 
   const metrics = [
-    { label: 'Total reports', value: overview.total, helper: 'Across all reporting periods', tone: 'text-slate-100', icon: FileText },
-    { label: 'Action required', value: overview.draft + overview.rejected, helper: `${overview.draft} drafts, ${overview.rejected} need revision`, tone: 'text-amber-200', icon: FilePlus2 },
-    { label: 'Pending review', value: overview.submitted + overview.underReview, helper: 'Submitted or under review', tone: 'text-sky-200', icon: CalendarClock },
-    { label: 'Approved', value: overview.approved, helper: 'Review process completed', tone: 'text-emerald-200', icon: CheckCircle2 },
-    { label: 'Due soon', value: overview.dueSoon, helper: 'Within the next 7 days', tone: 'text-rose-200', icon: CalendarClock },
+    { label: 'Tổng báo cáo', value: overview.total, helper: 'Tất cả kỳ báo cáo', tone: 'text-slate-100', icon: FileText },
+    { label: 'Cần xử lý', value: overview.draft + overview.rejected, helper: `${overview.draft} bản nháp, ${overview.rejected} cần chỉnh sửa`, tone: 'text-amber-200', icon: FilePlus2 },
+    { label: 'Chờ xét duyệt', value: overview.submitted + overview.underReview, helper: 'Đã nộp hoặc đang xét duyệt', tone: 'text-sky-200', icon: CalendarClock },
+    { label: 'Đã duyệt', value: overview.approved, helper: 'Đã hoàn tất xét duyệt', tone: 'text-emerald-200', icon: CheckCircle2 },
+    { label: 'Sắp đến hạn', value: overview.dueSoon, helper: 'Trong 7 ngày tới', tone: 'text-rose-200', icon: CalendarClock },
   ]
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5 pb-10">
       <section className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/75 p-5 sm:p-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <p className="mb-2 text-sm font-semibold text-cyan-300">Activity reports</p>
-          <h1 className="font-orbitron text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">Report management</h1>
-          <p className="mt-2 text-base text-slate-400">Track progress, review reports, and identify periods that require action.</p>
+          <h1 className="font-orbitron text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">Quản lý báo cáo</h1>
         </div>
         {canCreateReport && isManager && (
           <button onClick={() => navigate('/reports/create')} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 active:translate-y-px">
             <FilePlus2 size={18} strokeWidth={2} />
-            Create new report
+            Tạo báo cáo mới
           </button>
         )}
       </section>
@@ -159,31 +158,31 @@ export default function ReportsPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search by ID, club, period, or report type" className="h-11 w-full rounded-lg border border-slate-700 bg-slate-950 pl-10 pr-3 text-base text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none" />
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Tìm theo mã, câu lạc bộ, kỳ hoặc loại báo cáo" className="h-11 w-full rounded-lg border border-slate-700 bg-slate-950 pl-10 pr-3 text-base text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-wrap">
-            <select value={clubFilter} onChange={(event) => setClubFilter(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="ALL">All clubs</option>{clubs.map((club) => <option key={club} value={club}>{club}</option>)}</select>
-            <select value={periodFilter} onChange={(event) => setPeriodFilter(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="ALL">All periods</option>{periods.map((period) => <option key={period} value={period}>{period}</option>)}</select>
-            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="ALL">All types</option>{reportTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>
-            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="UPDATED">Recently updated</option><option value="DEADLINE">Nearest deadline</option><option value="CLUB">Club name</option></select>
+            <select value={clubFilter} onChange={(event) => setClubFilter(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="ALL">Tất cả câu lạc bộ</option>{clubs.map((club) => <option key={club} value={club}>{club}</option>)}</select>
+            <select value={periodFilter} onChange={(event) => setPeriodFilter(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="ALL">Tất cả kỳ</option>{periods.map((period) => <option key={period} value={period}>{period}</option>)}</select>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="ALL">Tất cả loại</option>{reportTypes.map((type) => <option key={type} value={type}>{formatReportType(type)}</option>)}</select>
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-300 focus:border-cyan-400 focus:outline-none"><option value="UPDATED">Cập nhật gần nhất</option><option value="DEADLINE">Hạn gần nhất</option><option value="CLUB">Tên câu lạc bộ</option></select>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
           <SlidersHorizontal size={16} className="text-slate-500" />
-          {FILTERS.map((status) => <button key={status} onClick={() => setStatusFilter(status)} className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${statusFilter === status ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{status === 'ALL' ? 'All statuses' : reportStatusLabel(status)}</button>)}
-          {hasFilters && <button onClick={clearFilters} className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100"><X size={16} /> Clear filters</button>}
+          {FILTERS.map((status) => <button key={status} onClick={() => setStatusFilter(status)} className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${statusFilter === status ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>{status === 'ALL' ? 'Tất cả trạng thái' : reportStatusLabel(status)}</button>)}
+          {hasFilters && <button onClick={clearFilters} className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100"><X size={16} /> Xóa bộ lọc</button>}
         </div>
       </section>
 
       <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/75">
         <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-          <div><h2 className="text-lg font-semibold text-slate-100">Report list</h2><p className="mt-1 text-sm text-slate-500">{isLoading ? 'Loading data' : `${filteredReports.length} matching reports`}</p></div>
-          <button onClick={loadReports} className="text-sm font-medium text-cyan-300 hover:text-cyan-200">Refresh</button>
+          <div><h2 className="text-lg font-semibold text-slate-100">Danh sách báo cáo</h2><p className="mt-1 text-sm text-slate-500">{isLoading ? 'Đang tải dữ liệu' : `${filteredReports.length} báo cáo phù hợp`}</p></div>
+          <button onClick={loadReports} className="text-sm font-medium text-cyan-300 hover:text-cyan-200">Làm mới</button>
         </div>
         {isLoading ? <div className="space-y-3 p-5">{[1, 2, 3, 4].map((item) => <div key={item} className="h-16 animate-pulse rounded-lg bg-slate-800/60" />)}</div> : filteredReports.length === 0 ? (
-          <div className="flex flex-col items-center px-6 py-16 text-center"><FileText size={36} className="text-slate-600" /><h3 className="mt-4 text-lg font-semibold text-slate-200">No reports found</h3><p className="mt-2 max-w-md text-sm text-slate-500">Adjust the filters or create the first report for the current activity period.</p>{hasFilters && <button onClick={clearFilters} className="mt-4 text-sm font-semibold text-cyan-300 hover:text-cyan-200">Clear filters</button>}</div>
+          <div className="flex flex-col items-center px-6 py-16 text-center"><FileText size={36} className="text-slate-600" /><h3 className="mt-4 text-lg font-semibold text-slate-200">Không tìm thấy báo cáo</h3><p className="mt-2 max-w-md text-sm text-slate-500">Hãy điều chỉnh bộ lọc hoặc tạo báo cáo đầu tiên cho kỳ hiện tại.</p>{hasFilters && <button onClick={clearFilters} className="mt-4 text-sm font-semibold text-cyan-300 hover:text-cyan-200">Xóa bộ lọc</button>}</div>
         ) : (
-          <div className="overflow-x-auto"><table className="min-w-[1050px] w-full text-left"><thead className="bg-slate-950/60 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3.5">Report</th><th className="px-4 py-3.5">Period and type</th><th className="px-4 py-3.5">Activities</th><th className="px-4 py-3.5">Deadline</th><th className="px-4 py-3.5">Updated</th><th className="px-4 py-3.5">Status</th><th className="px-5 py-3.5 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-800/80">
+          <div className="overflow-x-auto"><table className="min-w-[1050px] w-full text-left"><thead className="bg-slate-950/60 text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3.5">Báo cáo</th><th className="px-4 py-3.5">Kỳ và loại</th><th className="px-4 py-3.5">Hoạt động</th><th className="px-4 py-3.5">Hạn nộp</th><th className="px-4 py-3.5">Cập nhật</th><th className="px-4 py-3.5">Trạng thái</th><th className="px-5 py-3.5 text-right">Thao tác</th></tr></thead><tbody className="divide-y divide-slate-800/80">
             {filteredReports.map((report) => {
               const status = normalizeReportStatus(report.status)
               const canEdit = clubAccess.some((access) => access.clubId === report.clubId && access.isManager) && ['DRAFT', 'REJECTED'].includes(status)

@@ -12,10 +12,7 @@ function ExistingProfile() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-2xl font-bold text-white">Account Profile</h2>
-        <p className="mt-1 text-sm text-gray-400">
-          System roles and club memberships are granted through approval workflows and cannot be changed by users.
-        </p>
+        <h2 className="text-2xl font-bold text-white">Hồ sơ tài khoản</h2>
       </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -29,12 +26,12 @@ function ExistingProfile() {
               {user?.avatar || '?'}
             </div>
           </div>
-          <h3 className="mt-5 text-xl font-bold text-white">{user?.name || 'User'}</h3>
+          <h3 className="mt-5 text-xl font-bold text-white">{user?.name || 'Người dùng'}</h3>
           <p className="mt-1 text-sm text-cyan-300">@{user?.username || ''}</p>
           <div className="mt-5 flex items-center justify-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${user?.isActive && !user?.isLocked ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             <span className="text-sm text-gray-300">
-              {user?.isLocked ? 'Locked' : user?.isActive ? 'Active' : 'Inactive'}
+              {user?.isLocked ? 'Đã khóa' : user?.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
             </span>
           </div>
         </motion.section>
@@ -44,18 +41,18 @@ function ExistingProfile() {
           animate={{ opacity: 1, x: 0 }}
           className="rounded-2xl border border-slate-800 bg-slate-900/65 p-6 lg:col-span-2"
         >
-          <h3 className="text-lg font-bold text-white">Account Information</h3>
+          <h3 className="text-lg font-bold text-white">Thông tin tài khoản</h3>
           <dl className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-              <dt className="text-xs uppercase tracking-wider text-gray-500">Full name</dt>
-              <dd className="mt-2 break-words font-semibold text-white">{user?.name || '—'}</dd>
+              <dt className="text-xs uppercase tracking-wider text-gray-500">Họ và tên</dt>
+              <dd className="mt-2 break-words font-semibold text-white">{user?.name || '-'}</dd>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
               <dt className="text-xs uppercase tracking-wider text-gray-500">Email</dt>
-              <dd className="mt-2 break-words font-semibold text-white">{user?.email || '—'}</dd>
+              <dd className="mt-2 break-words font-semibold text-white">{user?.email || '-'}</dd>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 sm:col-span-2">
-              <dt className="text-xs uppercase tracking-wider text-gray-500">System role</dt>
+              <dt className="text-xs uppercase tracking-wider text-gray-500">Vai trò hệ thống</dt>
               <dd className="mt-2 flex flex-wrap gap-2">
                 {(user?.roles || []).map(role => (
                   <span key={role} className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-sm text-cyan-200">
@@ -71,17 +68,16 @@ function ExistingProfile() {
       <section className="rounded-2xl border border-slate-800 bg-slate-900/65 p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white">Approved Clubs</h3>
-            <p className="mt-1 text-sm text-gray-400">Pending or rejected applications are not included in this access list.</p>
+            <h3 className="text-lg font-bold text-white">Câu lạc bộ đã duyệt</h3>
           </div>
           <Link to="/clubs" className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-center text-sm font-semibold text-cyan-300">
-            View clubs
+            Xem câu lạc bộ
           </Link>
         </div>
 
         {approvedClubs.length === 0 ? (
           <div className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-gray-500">
-            This account does not belong to any club yet.
+            Tài khoản này chưa thuộc câu lạc bộ nào.
           </div>
         ) : (
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -89,9 +85,9 @@ function ExistingProfile() {
               <div key={access.clubId} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                 <p className="font-semibold text-white">{access.clubName}</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  {access.isManager && <span className="rounded-full bg-purple-500/15 px-2.5 py-1 text-purple-300">Club Manager</span>}
-                  {access.isTreasurer && <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-300">Treasurer</span>}
-                  {access.isApprovedMember && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-300">Member</span>}
+                  {access.isManager && <span className="rounded-full bg-purple-500/15 px-2.5 py-1 text-purple-300">Chủ nhiệm</span>}
+                  {access.isTreasurer && <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-amber-300">Thủ quỹ</span>}
+                  {access.isApprovedMember && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-300">Thành viên</span>}
                 </div>
               </div>
             ))}

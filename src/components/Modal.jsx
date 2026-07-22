@@ -99,7 +99,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Close dialog"
+                  aria-label="Đóng hộp thoại"
                   className="text-neutral-400 transition-colors hover:text-neutral-700"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

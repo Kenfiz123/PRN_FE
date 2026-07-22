@@ -29,34 +29,34 @@ export default function RegisterPage() {
 
     if (currentStep === 1) {
       if (!formData.name.trim()) {
-        newErrors.name = 'Full name is required'
+        newErrors.name = 'Vui lòng nhập họ và tên.'
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = 'Name must be at least 2 characters'
+        newErrors.name = 'Họ và tên phải có ít nhất 2 ký tự.'
       }
       if (!formData.email) {
-        newErrors.email = 'Email is required'
+        newErrors.email = 'Vui lòng nhập email.'
       } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Invalid email format'
+        newErrors.email = 'Định dạng email không hợp lệ.'
       }
     }
 
     if (currentStep === 2) {
       if (!formData.password) {
-        newErrors.password = 'Password is required'
+        newErrors.password = 'Vui lòng nhập mật khẩu.'
       } else if (formData.password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters'
+        newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự.'
       } else if (
         !/[A-Z]/.test(formData.password)
         || !/[a-z]/.test(formData.password)
         || !/\d/.test(formData.password)
         || !/[^A-Za-z0-9]/.test(formData.password)
       ) {
-        newErrors.password = 'Password must include uppercase, lowercase, number, and special character'
+        newErrors.password = 'Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt.'
       }
       if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password'
+        newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu.'
       } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match'
+        newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp.'
       }
     }
 
@@ -81,10 +81,10 @@ export default function RegisterPage() {
     setIsLoading(true)
     try {
       await register(formData.email, formData.name, formData.email, formData.password)
-      success('Account created. Choose a club and submit your membership request.')
+      success('Đã tạo tài khoản. Hãy chọn câu lạc bộ và gửi đơn đăng ký thành viên.')
       navigate('/clubs')
     } catch (err) {
-      error(err.message || 'Registration failed. Please try again.')
+      error(err.message || 'Không thể đăng ký. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }
@@ -131,11 +131,8 @@ export default function RegisterPage() {
             </motion.div>
 
             <h1 className="text-2xl font-bold gradient-text mb-2">
-              Create Account
+              Tạo tài khoản
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Join the ClubReportHub network
-            </p>
 
             {/* Progress Steps */}
             <div className="flex items-center justify-center gap-2 mt-6">
@@ -177,7 +174,7 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label htmlFor="register-name" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
+                  <label htmlFor="register-name" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Họ và tên</label>
                   <input
                     id="register-name"
                     type="text"
@@ -185,14 +182,14 @@ export default function RegisterPage() {
                     autoComplete="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Alex Chen"
+                    placeholder="Nguyễn Văn An"
                     className="cyber-input"
                   />
                   {errors.name && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.name}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="register-email" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Email Address</label>
+                  <label htmlFor="register-email" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Địa chỉ email</label>
                   <input
                     id="register-email"
                     type="email"
@@ -200,7 +197,7 @@ export default function RegisterPage() {
                     autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="alex@university.edu"
+                    placeholder="sinhvien@truong.edu.vn"
                     className="cyber-input"
                   />
                   {errors.email && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.email}</p>}
@@ -211,7 +208,7 @@ export default function RegisterPage() {
                   onClick={nextStep}
                   className="cyber-btn cyber-btn-primary w-full py-3"
                 >
-                  Continue
+                  Tiếp tục
                 </button>
               </motion.div>
             )}
@@ -224,7 +221,7 @@ export default function RegisterPage() {
                 className="space-y-5"
               >
                 <div>
-                  <label htmlFor="register-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Password</label>
+                  <label htmlFor="register-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Mật khẩu</label>
                   <input
                     id="register-password"
                     type="password"
@@ -232,14 +229,14 @@ export default function RegisterPage() {
                     autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Min. 8 characters"
+                    placeholder="Tối thiểu 8 ký tự"
                     className="cyber-input"
                   />
                   {errors.password && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.password}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="register-confirm-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Confirm Password</label>
+                  <label htmlFor="register-confirm-password" className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Xác nhận mật khẩu</label>
                   <input
                     id="register-confirm-password"
                     type="password"
@@ -247,14 +244,14 @@ export default function RegisterPage() {
                     autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Re-enter your password"
+                    placeholder="Nhập lại mật khẩu"
                     className="cyber-input"
                   />
                   {errors.confirmPassword && <p className="mt-2 text-xs" style={{ color: '#ff4444' }}>{errors.confirmPassword}</p>}
                 </div>
 
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Your account will not belong to any club yet. After signing in, choose a club and submit a membership request for its owner to review.
+                  Tài khoản mới chưa thuộc câu lạc bộ nào. Sau khi đăng nhập, hãy chọn câu lạc bộ và gửi đơn để chủ nhiệm xét duyệt.
                 </p>
 
                 <div className="flex gap-3">
@@ -263,7 +260,7 @@ export default function RegisterPage() {
                     onClick={prevStep}
                     className="cyber-btn flex-1 py-3"
                   >
-                    Back
+                    Quay lại
                   </button>
                   <button
                     type="submit"
@@ -276,9 +273,9 @@ export default function RegisterPage() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        Creating...
+                        Đang tạo...
                       </span>
-                    ) : 'Create Account'}
+                    ) : 'Tạo tài khoản'}
                   </button>
                 </div>
               </motion.div>
@@ -291,9 +288,9 @@ export default function RegisterPage() {
             style={{ borderTop: '1px solid var(--border-color)' }}
           >
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Already have an account?{' '}
+              Đã có tài khoản?{' '}
               <Link to="/login" className="font-medium" style={{ color: 'var(--neon-cyan)' }}>
-                Sign In
+                Đăng nhập
               </Link>
             </p>
           </div>
