@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Download, FileDown, RefreshCw } from 'lucide-react'
-import Modal from '../Modal'
-import { api } from '../../services/api'
-import { useToast } from '../../context/ToastContext'
+import Modal from '../Modal.jsx'
+import { api } from '../../services/api.js'
+import { useToast } from '../../context/ToastContext.jsx'
 
 export default function ExportHistoryModal({ isOpen, onClose }) {
   const { error, success } = useToast()
