@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ClubsPage from './pages/ClubsPage'
+import ClubMembersPage from './pages/ClubMembersPage'
+import ActivityAttendancePage from './pages/ActivityAttendancePage'
 import ReportsPage from './pages/ReportsPage'
 import CreateReportPage from './pages/CreateReportPage'
 import ReportDetailPage from './pages/ReportDetailPage'
@@ -108,6 +110,22 @@ export default function App() {
         element={
           <LayoutRoute title="Clubs" subtitle="Management" permission={PERMISSIONS.VIEW_CLUBS}>
             <ClubsPage />
+          </LayoutRoute>
+        }
+      />
+      <Route
+        path="/clubs/:clubId/members"
+        element={
+          <LayoutRoute title="Club Members" subtitle="Member Management" permission={PERMISSIONS.VIEW_CLUBS}>
+            <ClubMembersPage />
+          </LayoutRoute>
+        }
+      />
+      <Route
+        path="/clubs/:clubId/attendance"
+        element={
+          <LayoutRoute title="Attendance" subtitle="Activity Attendance" permission={PERMISSIONS.VIEW_ACTIVITIES}>
+            <ActivityAttendancePage />
           </LayoutRoute>
         }
       />

@@ -213,11 +213,17 @@ class ApiService {
 
   // Club endpoints
   async getClubs() {
-    return this.request('/api/clubs');
+    return this.request('/api/clubs?active=true');
   }
 
   async getClub(id) {
     return this.request(`/api/clubs/${id}`);
+  }
+
+  async deleteClub(id) {
+    return this.request(`/api/clubs/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async getMyMemberships() {
@@ -300,6 +306,22 @@ class ApiService {
     });
   }
 
+  async getClubMembers(clubId, params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    ).toString();
+    return this.request(`/api/clubs/${clubId}/members${query ? `?${query}` : ''}`);
+  }
+
+  async getClubMember(clubId, memberId, params = { historyPage: 1, historyPageSize: 20 }) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/clubs/${clubId}/members/${memberId}?${query}`);
+  }
+
+  async deleteClubMember(clubId, memberId) {
+    return this.request(`/api/clubs/${clubId}/members/${memberId}`, { method: 'DELETE' });
+  }
+
   // Report endpoints
   async getReports(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -380,6 +402,25 @@ class ApiService {
   async completeActivity(activityId) {
     return this.request(`/api/activities/${activityId}/complete`, {
       method: 'PATCH',
+    });
+  }
+
+  async getActivityAttendance(clubId, activityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/clubs/${clubId}/activities/${activityId}/attendance?${query}`);
+  }
+
+  async updateActivityAttendance(clubId, activityId, memberId, data) {
+    return this.request(`/api/clubs/${clubId}/activities/${activityId}/attendance/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async bulkUpdateActivityAttendance(clubId, activityId, items) {
+    return this.request(`/api/clubs/${clubId}/activities/${activityId}/attendance`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
     });
   }
 
