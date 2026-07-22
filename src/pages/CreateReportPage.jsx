@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { FileUp, FileText, Upload, Trash2, RefreshCw, AlertCircle, CheckCircle2, ArrowRight, Save } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import api from '../services/api'
@@ -20,10 +21,22 @@ const DEFAULT_PERIODS = [
   { period: '2026-HK1', label: 'Học kỳ I / 2026-2027', dueDate: '2026-11-15' },
 ]
 
+const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.xlsx']
+const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MB
+
 function generateUniqueId() {
   return typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `act_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+}
+
+function formatBytes(bytes, decimals = 2) {
+  if (!bytes || bytes === 0) return '0 Bytes'
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
 export default function CreateReportPage() {
@@ -33,22 +46,24 @@ export default function CreateReportPage() {
   const { user, clubAccess } = useAuth()
   const { success, error } = useToast()
 
+  const [creationMode, setCreationMode] = useState('FORM') // 'FORM' | 'UPLOAD'
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(isEditMode)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [deadlines, setDeadlines] = useState([])
   const [managedClubs, setManagedClubs] = useState([])
-  const [existingReport, setExistingReport] = useState(null)
 
+  // Shared metadata
   const [clubId, setClubId] = useState('')
   const [period, setPeriod] = useState('2026-Q3')
   const [reportType, setReportType] = useState('QUARTERLY')
+
+  // Form mode fields
   const [executiveSummary, setExecutiveSummary] = useState('')
   const [achievements, setAchievements] = useState('')
   const [challenges, setChallenges] = useState('')
   const [recommendations, setRecommendations] = useState('')
   const [nextPeriodPlan, setNextPeriodPlan] = useState('')
-
   const [activities, setActivities] = useState([
     {
       id: generateUniqueId(),
@@ -67,6 +82,13 @@ export default function CreateReportPage() {
       evidenceUrl: '',
     },
   ])
+
+  // Upload mode fields
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [uploadNote, setUploadNote] = useState('')
+  const [uploadError, setUploadError] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef(null)
 
   const userManagedClubs = useMemo(() => {
     return clubAccess.filter((access) => access.isManager)
@@ -116,6 +138,10 @@ export default function CreateReportPage() {
         setRecommendations(rep.recommendations || '')
         setNextPeriodPlan(rep.nextPeriodPlan || '')
 
+        if (rep.contentSource === 'UPLOADED_FILE') {
+          setCreationMode('UPLOAD')
+        }
+
         if (Array.isArray(rep.details) && rep.details.length > 0) {
           setActivities(
             rep.details.map((d) => ({
@@ -148,204 +174,139 @@ export default function CreateReportPage() {
 
   const currentDueDate = useMemo(() => {
     const matched = deadlines.find((d) => d.period === period)
-    if (matched) return matched.dueDate
-    return '2026-09-30'
-  }, [period, deadlines])
+    return matched?.dueDate || matched?.DueDate || 'Chưa quy định'
+  }, [deadlines, period])
 
-  useEffect(() => {
-    if (isEditMode || !clubId || !period || !reportType) {
-      setExistingReport(null)
-      return undefined
+  const validateFile = (file) => {
+    if (!file) {
+      return 'Vui lòng chọn tệp báo cáo.'
     }
-
-    let isActive = true
-    api.getReports({ page: 1, pageSize: 100 })
-      .then((result) => {
-        const items = Array.isArray(result?.items) ? result.items : Array.isArray(result) ? result : []
-        const match = items.find((item) => Number(item.clubId) === Number(clubId) && item.period === period && item.reportType === reportType)
-        if (isActive) setExistingReport(match || null)
-      })
-      .catch(() => { if (isActive) setExistingReport(null) })
-    return () => { isActive = false }
-  }, [clubId, isEditMode, period, reportType])
-
-  const totals = useMemo(() => {
-    const totalActivities = activities.length
-    const totalParticipants = activities.reduce((sum, act) => sum + (Number(act.participantCount) || 0), 0)
-    const totalBudgetSpent = activities.reduce((sum, act) => sum + (Number(act.budgetSpent) || 0), 0)
-    return { totalActivities, totalParticipants, totalBudgetSpent }
-  }, [activities])
-
-  const addActivity = () => {
-    setActivities((prev) => [
-      ...prev,
-      {
-        id: generateUniqueId(),
-        dbId: null,
-        activityName: '',
-        activityType: 'Chuyên môn',
-        activityDate: new Date().toISOString().split('T')[0],
-        location: '',
-        partnerUnit: '',
-        objective: '',
-        description: '',
-        targetParticipantCount: 50,
-        participantCount: 0,
-        outcome: '',
-        budgetSpent: 0,
-        evidenceUrl: '',
-      },
-    ])
+    const ext = '.' + file.name.split('.').pop().toLowerCase()
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return 'Định dạng tệp không được hỗ trợ. Chỉ chấp nhận các tệp .pdf, .docx, .xlsx.'
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Dung lượng tệp vượt quá giới hạn cho phép (tối đa 20 MB).'
+    }
+    return ''
   }
 
-  const updateActivityField = (id, field, value) => {
-    setActivities((prev) =>
-      prev.map((act) => (act.id === id ? { ...act, [field]: value } : act)),
-    )
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const err = validateFile(file)
+    if (err) {
+      setUploadError(err)
+      setSelectedFile(null)
+    } else {
+      setUploadError('')
+      setSelectedFile(file)
+    }
   }
 
-  const removeActivity = (id) => {
-    if (activities.length <= 1) {
-      error('Báo cáo hoạt động phải có ít nhất 1 hoạt động.')
+  const handleDrop = (e) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    const err = validateFile(file)
+    if (err) {
+      setUploadError(err)
+      setSelectedFile(null)
+    } else {
+      setUploadError('')
+      setSelectedFile(file)
+    }
+  }
+
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault()
+    if (!clubId) {
+      error('Vui lòng chọn câu lạc bộ.')
       return
     }
-    setActivities((prev) => prev.filter((act) => act.id !== id))
-  }
-
-  const validateStep1 = () => {
-    if (!clubId) {
-      error('Vui lòng chọn Câu lạc bộ.')
-      return false
+    const fileErr = validateFile(selectedFile)
+    if (fileErr) {
+      setUploadError(fileErr)
+      error(fileErr)
+      return
     }
-    if (!period) {
-      error('Vui lòng chọn Kỳ báo cáo.')
-      return false
-    }
-    return true
-  }
 
-  const validateStep2 = () => {
-    if (activities.length === 0) {
-      error('Báo cáo phải chứa ít nhất 1 hoạt động.')
-      return false
-    }
-    for (let i = 0; i < activities.length; i++) {
-      const act = activities[i]
-      if (!act.activityName.trim()) {
-        error(`Vui lòng nhập tên cho Hoạt động ${i + 1}.`)
-        return false
-      }
-      if (!act.activityDate) {
-        error(`Vui lòng chọn ngày tổ chức cho Hoạt động ${i + 1}.`)
-        return false
-      }
-      if (!act.description.trim()) {
-        error(`Vui lòng nhập mô tả cho Hoạt động ${i + 1}.`)
-        return false
-      }
-      if (act.participantCount < 0) {
-        error(`Số người tham gia Hoạt động ${i + 1} không được âm.`)
-        return false
-      }
-      if (!act.outcome.trim()) {
-        error(`Vui lòng nhập kết quả đạt được cho Hoạt động ${i + 1}.`)
-        return false
-      }
-    }
-    return true
-  }
-
-  const validateStep3 = () => {
-    if (!executiveSummary.trim()) {
-      error('Vui lòng nhập Tóm tắt hoạt động trong kỳ.')
-      return false
-    }
-    if (!achievements.trim()) {
-      error('Vui lòng nhập Thành tựu nổi bật trong kỳ.')
-      return false
-    }
-    return true
-  }
-
-  const handleNextStep = () => {
-    if (step === 1 && !validateStep1()) return
-    if (step === 2 && !validateStep2()) return
-    if (step === 3 && !validateStep3()) return
-    setStep((prev) => Math.min(prev + 1, 4))
-  }
-
-  const handlePrevStep = () => {
-    setStep((prev) => Math.max(prev - 1, 1))
-  }
-
-  const buildPayload = () => {
-    return {
-      clubId: Number(clubId),
-      period: period.trim(),
-      reportType,
-      executiveSummary: executiveSummary.trim(),
-      achievements: achievements.trim(),
-      challenges: challenges.trim() || null,
-      recommendations: recommendations.trim() || null,
-      nextPeriodPlan: nextPeriodPlan.trim() || null,
-      details: activities.map((act, index) => ({
-        id: act.dbId || undefined,
-        activityName: act.activityName.trim(),
-        activityType: act.activityType.trim(),
-        activityDate: act.activityDate,
-        location: act.location.trim() || null,
-        partnerUnit: act.partnerUnit.trim() || null,
-        objective: act.objective.trim() || null,
-        description: act.description.trim(),
-        targetParticipantCount: Number(act.targetParticipantCount) || 0,
-        participantCount: Number(act.participantCount) || 0,
-        outcome: act.outcome.trim(),
-        budgetSpent: Number(act.budgetSpent) || 0,
-        evidenceUrl: act.evidenceUrl.trim() || null,
-        sortOrder: index + 1,
-      })),
-    }
-  }
-
-  const handleSaveDraft = async () => {
-    if (!validateStep1()) return
     setIsSubmitting(true)
+    setUploadProgress(30)
     try {
-      const payload = buildPayload()
-      let result
-      if (isEditMode) {
-        result = await api.updateReport(id, payload)
-        success('Đã cập nhật bản nháp báo cáo thành công!')
-      } else {
-        result = await api.createReport(payload)
-        success('Đã lưu bản nháp báo cáo thành công!')
+      const formData = new FormData()
+      formData.append('clubId', clubId)
+      formData.append('period', period)
+      formData.append('reportType', reportType)
+      if (uploadNote.trim()) {
+        formData.append('note', uploadNote.trim())
       }
-      navigate(`/reports/${result.id}`)
+      formData.append('file', selectedFile)
+
+      setUploadProgress(70)
+      const res = await api.uploadReportFile(formData)
+      setUploadProgress(100)
+      success('Tải lên báo cáo thành công!')
+      navigate(`/reports/${res.id}`)
     } catch (err) {
-      error(err.message || 'Không thể lưu bản nháp báo cáo.')
+      error(err.message || 'Không thể tải lên báo cáo.')
     } finally {
       setIsSubmitting(false)
+      setUploadProgress(0)
     }
   }
 
-  const handleSubmitReport = async () => {
-    if (!validateStep1() || !validateStep2() || !validateStep3()) return
+  const handleFormSubmit = async (e) => {
+    e?.preventDefault()
+    if (!clubId) {
+      error('Vui lòng chọn câu lạc bộ.')
+      return
+    }
+    if (activities.length === 0 || !activities[0].activityName.trim()) {
+      error('Báo cáo phải chứa ít nhất một hoạt động có tên.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      const payload = buildPayload()
-      let targetId = id
-      if (isEditMode) {
-        await api.updateReport(id, payload)
-      } else {
-        const created = await api.createReport(payload)
-        targetId = created.id
+      const payload = {
+        clubId: Number(clubId),
+        period,
+        reportType,
+        executiveSummary,
+        achievements,
+        challenges,
+        recommendations,
+        nextPeriodPlan,
+        details: activities.map((act, index) => ({
+          id: act.dbId,
+          activityName: act.activityName.trim(),
+          activityDate: act.activityDate,
+          description: act.description.trim(),
+          participantCount: Number(act.participantCount) || 0,
+          outcome: act.outcome.trim(),
+          activityType: act.activityType,
+          location: act.location.trim(),
+          partnerUnit: act.partnerUnit.trim(),
+          objective: act.objective.trim(),
+          targetParticipantCount: Number(act.targetParticipantCount) || 0,
+          budgetSpent: Number(act.budgetSpent) || 0,
+          evidenceUrl: act.evidenceUrl.trim(),
+          sortOrder: index,
+        })),
       }
 
-      await api.submitReport(targetId)
-      success('Đã nộp báo cáo hoạt động thành công! Đang chờ duyệt.')
-      navigate(`/reports/${targetId}`)
+      if (isEditMode) {
+        await api.updateReport(id, payload)
+        success('Đã cập nhật báo cáo thành công!')
+        navigate(`/reports/${id}`)
+      } else {
+        const created = await api.createReport(payload)
+        success('Đã tạo dự thảo báo cáo thành công!')
+        navigate(`/reports/${created.id}`)
+      }
     } catch (err) {
-      error(err.message || 'Không thể nộp báo cáo.')
+      error(err.message || 'Không thể lưu báo cáo.')
     } finally {
       setIsSubmitting(false)
     }
@@ -353,125 +314,130 @@ export default function CreateReportPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="cyber-spinner mb-4" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="cyber-spinner" />
       </div>
     )
   }
 
   return (
-    <div className="report-form max-w-[1200px] mx-auto space-y-5 pb-10">
+    <div className="mx-auto max-w-5xl space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/75 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold font-orbitron text-slate-100 sm:text-3xl">
-            {isEditMode ? 'CHỈNH SỬA BÁO CÁO HOẠT ĐỘNG' : 'LẬP BÁO CÁO HOẠT ĐỘNG CLB'}
+          <h1 className="font-orbitron text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">
+            {isEditMode ? 'Chỉnh sửa báo cáo' : 'Tạo báo cáo hoạt động'}
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Quy trình lập và nộp báo cáo tổng kết hoạt động định kỳ cho CLB
+          <p className="mt-1 text-sm text-slate-400">
+            Lựa chọn phương thức nộp báo cáo hoạt động định kỳ cho câu lạc bộ.
           </p>
         </div>
-        <button
-          onClick={() => navigate('/reports')}
-          className="min-h-11 px-4 py-2 text-sm font-semibold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
-        >
-          Hủy & Quay lại
-        </button>
       </div>
 
-      {existingReport && (
-        <div className="flex flex-col gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100 sm:flex-row sm:items-center sm:justify-between">
-          <p>Đã có báo cáo cho câu lạc bộ, kỳ và loại báo cáo này.</p>
-          <div className="flex shrink-0 gap-3 font-semibold">
-            <button onClick={() => navigate(`/reports/${existingReport.id}`)} className="text-cyan-200 hover:text-cyan-100">Xem báo cáo</button>
-            {['DRAFT', 'REJECTED'].includes(String(existingReport.status || '').toUpperCase()) && <button onClick={() => navigate(`/reports/${existingReport.id}/edit`)} className="text-cyan-200 hover:text-cyan-100">Chỉnh sửa</button>}
-          </div>
+      {/* Method Selector Tabs */}
+      {!isEditMode && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setCreationMode('FORM')}
+            className={`flex items-center gap-4 rounded-xl border p-5 text-left transition ${
+              creationMode === 'FORM'
+                ? 'border-cyan-400/50 bg-cyan-500/10 shadow-lg shadow-cyan-500/5 ring-1 ring-cyan-400/30'
+                : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/50'
+            }`}
+          >
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+              creationMode === 'FORM' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'
+            }`}>
+              <FileText size={24} />
+            </div>
+            <div>
+              <h3 className={`font-semibold ${creationMode === 'FORM' ? 'text-cyan-300' : 'text-slate-200'}`}>
+                Nhập trực tiếp trên hệ thống
+              </h3>
+              <p className="mt-1 text-xs text-slate-400">
+                Khai báo theo mẫu chuẩn 4 bước: Thông tin chung, Hoạt động, Đánh giá & Phê duyệt.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCreationMode('UPLOAD')}
+            className={`flex items-center gap-4 rounded-xl border p-5 text-left transition ${
+              creationMode === 'UPLOAD'
+                ? 'border-cyan-400/50 bg-cyan-500/10 shadow-lg shadow-cyan-500/5 ring-1 ring-cyan-400/30'
+                : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/50'
+            }`}
+          >
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+              creationMode === 'UPLOAD' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'
+            }`}>
+              <FileUp size={24} />
+            </div>
+            <div>
+              <h3 className={`font-semibold ${creationMode === 'UPLOAD' ? 'text-cyan-300' : 'text-slate-200'}`}>
+                Tải báo cáo có sẵn
+              </h3>
+              <p className="mt-1 text-xs text-slate-400">
+                Tải lên tệp văn bản báo cáo có sẵn từ máy tính (.pdf, .docx, .xlsx, tối đa 20 MB).
+              </p>
+            </div>
+          </button>
         </div>
       )}
 
-      {/* Stepper Navigation */}
-      <div className="p-3 sm:p-4 border border-slate-800 bg-slate-900/75 rounded-xl">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-center text-sm font-semibold">
-          {[
-            { stepNum: 1, label: '1. Thông tin chung' },
-            { stepNum: 2, label: '2. Hoạt động trong kỳ' },
-            { stepNum: 3, label: '3. Tổng kết & Kế hoạch' },
-            { stepNum: 4, label: '4. Preview & Gửi' },
-          ].map((s) => (
-            <button
-              key={s.stepNum}
-              onClick={() => {
-                if (s.stepNum < step) setStep(s.stepNum)
-              }}
-              disabled={s.stepNum > step}
-              className={`min-h-12 py-2 px-3 rounded-lg transition-all ${
-                step === s.stepNum
-                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/20'
-                  : s.stepNum < step
-                  ? 'bg-cyan-950/40 text-cyan-400 hover:bg-cyan-900/40'
-                  : 'bg-slate-800/40 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* METHOD 2: UPLOAD WORKFLOW */}
+      {creationMode === 'UPLOAD' && (
+        <form onSubmit={handleUploadSubmit} className="space-y-6">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
+            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+              <Upload size={20} className="text-cyan-400" /> Thông tin tệp báo cáo nộp
+            </h2>
 
-      {/* STEP 1: General Info */}
-      {step === 1 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl space-y-6">
-            <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 1: THÔNG TIN CHUNG</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Câu lạc bộ <span className="text-rose-500">*</span>
-                </label>
-                {managedClubs.length > 0 ? (
-                  <select
-                    value={clubId}
-                    onChange={(e) => setClubId(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  >
-                    {managedClubs.map((club) => (
-                      <option key={club.id} value={club.id}>
-                        {club.name} ({club.code})
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="text-rose-400 text-xs py-2">
-                    Bạn chưa là Manager của CLB nào hoặc danh sách đang tải.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Kỳ báo cáo <span className="text-rose-500">*</span>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Câu lạc bộ <span className="text-rose-400">*</span>
                 </label>
                 <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+                  value={clubId}
+                  onChange={(e) => setClubId(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
                 >
-                  {deadlines.map((d) => (
-                    <option key={d.period} value={d.period}>
-                      {d.label || d.period} (Hạn: {d.dueDate})
+                  {managedClubs.map((club) => (
+                    <option key={club.id} value={club.id}>
+                      {club.name} ({club.code})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Loại báo cáo <span className="text-rose-500">*</span>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Kỳ báo cáo <span className="text-rose-400">*</span>
+                </label>
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                >
+                  {deadlines.map((d) => (
+                    <option key={d.period} value={d.period}>
+                      {d.label || d.period}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Loại báo cáo
                 </label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
                 >
                   {REPORT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -482,439 +448,334 @@ export default function CreateReportPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Hạn nộp báo cáo (Tự động từ hệ thống)
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Hạn nộp (từ hệ thống)
                 </label>
                 <input
                   type="text"
                   readOnly
                   value={currentDueDate}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-cyan-400 font-mono cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Người lập báo cáo
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={user?.name || user?.username || 'Club Manager'}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-400 cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Trạng thái khởi tạo
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value="Draft (Bản nháp)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-amber-400 cursor-not-allowed font-semibold"
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-sm text-amber-300 font-semibold cursor-not-allowed"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-slate-800">
-              <button
-                onClick={handleNextStep}
-                className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-lg hover:bg-cyan-400 transition-all text-xs"
+            {/* Drop Zone */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Chọn tệp báo cáo (.pdf, .docx, .xlsx) <span className="text-rose-400">*</span>
+              </label>
+              
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition cursor-pointer ${
+                  uploadError
+                    ? 'border-rose-500/50 bg-rose-500/5'
+                    : selectedFile
+                    ? 'border-emerald-500/50 bg-emerald-500/5'
+                    : 'border-slate-700 bg-slate-950/40 hover:border-cyan-400/50 hover:bg-slate-900/60'
+                }`}
               >
-                Tiếp tục: BƯỚC 2 (Hoạt động) &rarr;
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.xlsx"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
 
-      {/* STEP 2: Activities */}
-      {step === 2 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-orbitron font-semibold text-cyan-400">
-              CÁC HOẠT ĐỘNG ĐÃ THỰC HIỆN TRONG KỲ ({activities.length})
-            </h2>
-            <button
-              onClick={addActivity}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-semibold rounded-lg border border-cyan-500/30 transition-all"
-            >
-              + Thêm hoạt động
-            </button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-4 text-center">
-            <div>
-              <p className="text-xs text-slate-400 uppercase">Tổng số hoạt động</p>
-              <p className="text-xl font-orbitron font-bold text-cyan-400">{totals.totalActivities}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 uppercase">Tổng người tham gia</p>
-              <p className="text-xl font-orbitron font-bold text-emerald-400">{totals.totalParticipants} người</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 uppercase">Tổng chi phí thực tế</p>
-              <p className="text-xl font-orbitron font-bold text-amber-400">
-                {totals.totalBudgetSpent.toLocaleString('vi-VN')} VNĐ
-              </p>
-            </div>
-          </div>
-
-          {activities.map((act, index) => (
-            <div
-              key={act.id}
-              className="border border-slate-800 bg-slate-900/80 rounded-xl p-6 space-y-4"
-            >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="font-orbitron font-bold text-cyan-400 text-sm">
-                  HOẠT ĐỘNG #{index + 1}
-                </span>
-                {activities.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeActivity(act.id)}
-                    className="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 bg-rose-950/40 rounded border border-rose-500/30"
-                  >
-                    Xóa hoạt động này
-                  </button>
+                {selectedFile ? (
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-400">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <p className="font-semibold text-slate-100">{selectedFile.name}</p>
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      <span>{formatBytes(selectedFile.size)}</span>
+                      <span>•</span>
+                      <span className="uppercase font-mono text-cyan-300">
+                        {selectedFile.name.split('.').pop()}
+                      </span>
+                    </div>
+                    <div className="pt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          fileInputRef.current?.click()
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                      >
+                        <RefreshCw size={14} /> Thay đổi
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedFile(null)
+                          setUploadError('')
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20"
+                      >
+                        <Trash2 size={14} /> Xóa tệp
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-400">
+                      <Upload size={24} />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-200">
+                      Kéo thả tệp báo cáo vào đây hoặc <span className="text-cyan-400 underline">chọn từ máy tính</span>
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Hỗ trợ định dạng .PDF, .DOCX, .XLSX (Tối đa 20 MB)
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Tên hoạt động <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={act.activityName}
-                    onChange={(e) => updateActivityField(act.id, 'activityName', e.target.value)}
-                    placeholder="VD: Workshop Lập trình Microservices với .NET 8"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
+              {uploadError && (
+                <p className="mt-2 text-xs font-medium text-rose-400 flex items-center gap-1.5">
+                  <AlertCircle size={14} /> {uploadError}
+                </p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Loại hoạt động
-                  </label>
-                  <input
-                    type="text"
-                    value={act.activityType}
-                    onChange={(e) => updateActivityField(act.id, 'activityType', e.target.value)}
-                    placeholder="VD: Chuyên môn / Phong trào / Hợp tác"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
+            {/* Optional Note */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Ghi chú / Tóm tắt báo cáo (không bắt buộc)
+              </label>
+              <textarea
+                rows={3}
+                value={uploadNote}
+                onChange={(e) => setUploadNote(e.target.value)}
+                placeholder="Nhập ghi chú hoặc tóm tắt ngắn về báo cáo nộp..."
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+              />
+            </div>
+          </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Ngày tổ chức <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={act.activityDate}
-                    onChange={(e) => updateActivityField(act.id, 'activityDate', e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Địa điểm tổ chức
-                  </label>
-                  <input
-                    type="text"
-                    value={act.location}
-                    onChange={(e) => updateActivityField(act.id, 'location', e.target.value)}
-                    placeholder="VD: Hội trường Alpha, FPT University"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Đơn vị phối hợp
-                  </label>
-                  <input
-                    type="text"
-                    value={act.partnerUnit}
-                    onChange={(e) => updateActivityField(act.id, 'partnerUnit', e.target.value)}
-                    placeholder="VD: Doanh nghiệp FPT Software / Khoa CNTT"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Số người dự kiến / Thực tế <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      value={act.targetParticipantCount}
-                      onChange={(e) => updateActivityField(act.id, 'targetParticipantCount', Math.max(0, parseInt(e.target.value) || 0))}
-                      placeholder="Dự kiến"
-                      className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                    />
-                    <input
-                      type="number"
-                      value={act.participantCount}
-                      onChange={(e) => updateActivityField(act.id, 'participantCount', Math.max(0, parseInt(e.target.value) || 0))}
-                      placeholder="Thực tế"
-                      className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Nội dung / Mô tả hoạt động <span className="text-rose-500">*</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={act.description}
-                    onChange={(e) => updateActivityField(act.id, 'description', e.target.value)}
-                    placeholder="Chi tiết về diễn biến hoạt động..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Kết quả đạt được <span className="text-rose-500">*</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={act.outcome}
-                    onChange={(e) => updateActivityField(act.id, 'outcome', e.target.value)}
-                    placeholder="VD: 85% sinh viên nắm vững kiến thức, 10 dự án được trao giải..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Chi phí thực tế (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    value={act.budgetSpent}
-                    onChange={(e) => updateActivityField(act.id, 'budgetSpent', Math.max(0, parseFloat(e.target.value) || 0))}
-                    placeholder="0"
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Link minh chứng (Ảnh/Drive URL)
-                  </label>
-                  <input
-                    type="url"
-                    value={act.evidenceUrl}
-                    onChange={(e) => updateActivityField(act.id, 'evidenceUrl', e.target.value)}
-                    placeholder="https://drive.google.com/..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
+          {/* Progress indicator */}
+          {isSubmitting && uploadProgress > 0 && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-2">
+              <div className="flex justify-between text-xs text-slate-300">
+                <span>Đang tải tệp báo cáo lên hệ thống...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full bg-cyan-400 transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
               </div>
             </div>
-          ))}
+          )}
 
-          <div className="flex justify-between pt-4">
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
             <button
-              onClick={handlePrevStep}
-              className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
+              type="button"
+              onClick={() => navigate('/reports')}
+              className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800"
             >
-              &larr; Quay lại
+              Hủy
             </button>
             <button
-              onClick={handleNextStep}
-              className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-lg hover:bg-cyan-400 transition-all text-xs"
+              type="submit"
+              disabled={isSubmitting || !selectedFile}
+              className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
             >
-              Tiếp tục: BƯỚC 3 (Tổng kết) &rarr;
+              <Upload size={18} /> {isSubmitting ? 'Đang tải lên...' : 'Tải lên & Lưu dự thảo'}
             </button>
           </div>
-        </motion.div>
+        </form>
       )}
 
-      {/* STEP 3: Summary & Future Plans */}
-      {step === 3 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl space-y-6">
-            <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 3: TỔNG KẾT VÀ KẾ HOẠCH</h2>
+      {/* METHOD 1: STRUCTURED FORM WORKFLOW */}
+      {creationMode === 'FORM' && (
+        <form onSubmit={handleFormSubmit} className="space-y-6">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
+            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+              <FileText size={20} className="text-cyan-400" /> Thông tin chung báo cáo
+            </h2>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Câu lạc bộ <span className="text-rose-400">*</span>
+                </label>
+                <select
+                  value={clubId}
+                  onChange={(e) => setClubId(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                >
+                  {managedClubs.map((club) => (
+                    <option key={club.id} value={club.id}>
+                      {club.name} ({club.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Kỳ báo cáo <span className="text-rose-400">*</span>
+                </label>
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                >
+                  {deadlines.map((d) => (
+                    <option key={d.period} value={d.period}>
+                      {d.label || d.period}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Loại báo cáo
+                </label>
+                <select
+                  value={reportType}
+                  onChange={(e) => setReportType(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                >
+                  {REPORT_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  Hạn nộp (từ hệ thống)
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={currentDueDate}
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-sm text-amber-300 font-semibold cursor-not-allowed"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Tóm tắt hoạt động trong kỳ <span className="text-rose-500">*</span>
-              </label>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Tóm tắt điều hành</label>
               <textarea
                 rows={3}
                 value={executiveSummary}
                 onChange={(e) => setExecutiveSummary(e.target.value)}
-                placeholder="Nêu tóm tắt chung các điểm nhấn chính của CLB trong kỳ vừa qua..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
+                placeholder="Tóm tắt tổng quan về tình hình hoạt động của CLB trong kỳ..."
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Thành tựu nổi bật <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                rows={3}
-                value={achievements}
-                onChange={(e) => setAchievements(e.target.value)}
-                placeholder="Liệt kê các giải thưởng, chứng nhận hoặc kết quả xuất sắc đạt được..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Khó khăn & Tồn tại
-              </label>
-              <textarea
-                rows={3}
-                value={challenges}
-                onChange={(e) => setChallenges(e.target.value)}
-                placeholder="Các vướng mắc về địa điểm, kinh phí, nhân sự..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Kiến nghị & Đề xuất hỗ trợ
-              </label>
-              <textarea
-                rows={3}
-                value={recommendations}
-                onChange={(e) => setRecommendations(e.target.value)}
-                placeholder="Đề xuất hỗ trợ từ Nhà trường, Phòng CTSV..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Kế hoạch kỳ tiếp theo
-              </label>
-              <textarea
-                rows={3}
-                value={nextPeriodPlan}
-                onChange={(e) => setNextPeriodPlan(e.target.value)}
-                placeholder="Định hướng và các sự kiện dự kiến tổ chức trong kỳ tới..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex justify-between pt-4 border-t border-slate-800">
-              <button
-                onClick={handlePrevStep}
-                className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
-              >
-                &larr; Quay lại
-              </button>
-              <button
-                onClick={handleNextStep}
-                className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-lg hover:bg-cyan-400 transition-all text-xs"
-              >
-                Tiếp tục: BƯỚC 4 (Preview) &rarr;
-              </button>
             </div>
           </div>
-        </motion.div>
-      )}
 
-      {/* STEP 4: Preview & Submit */}
-      {step === 4 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="p-6 bg-slate-900/80 border border-cyan-500/30 rounded-xl space-y-6">
-            <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 4: XEM TRƯỚC VÀ NỘP BÁO CÁO</h2>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/60 rounded-xl border border-slate-800">
-              <div>
-                <p className="text-xs text-slate-400">Kỳ báo cáo</p>
-                <p className="font-semibold text-cyan-400">{period}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400">Loại báo cáo</p>
-                <p className="font-semibold text-slate-200">{reportType}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400">Hạn nộp</p>
-                <p className="font-semibold text-amber-400 font-mono">{currentDueDate}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400">Số hoạt động</p>
-                <p className="font-semibold text-emerald-400">{totals.totalActivities} hoạt động</p>
-              </div>
+          {/* Activities list in form mode */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-100">Danh sách hoạt động ({activities.length})</h2>
+              <button
+                type="button"
+                onClick={() => setActivities([...activities, {
+                  id: generateUniqueId(),
+                  dbId: null,
+                  activityName: '',
+                  activityType: 'Chuyên môn',
+                  activityDate: new Date().toISOString().split('T')[0],
+                  location: '',
+                  partnerUnit: '',
+                  objective: '',
+                  description: '',
+                  targetParticipantCount: 50,
+                  participantCount: 0,
+                  outcome: '',
+                  budgetSpent: 0,
+                  evidenceUrl: '',
+                }])}
+                className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-700"
+              >
+                + Thêm hoạt động
+              </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Tóm tắt hoạt động</h4>
-                <p className="text-slate-300 text-sm mt-1 bg-slate-950 p-3 rounded border border-slate-800 whitespace-pre-wrap">
-                  {executiveSummary}
-                </p>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Thành tựu nổi bật</h4>
-                <p className="text-slate-300 text-sm mt-1 bg-slate-950 p-3 rounded border border-slate-800 whitespace-pre-wrap">
-                  {achievements}
-                </p>
-              </div>
+            {activities.map((act, idx) => (
+              <div key={act.id} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                  <span className="text-xs font-bold text-cyan-400">HOẠT ĐỘNG #{idx + 1}</span>
+                  {activities.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setActivities(activities.filter((a) => a.id !== act.id))}
+                      className="text-xs text-rose-400 hover:underline"
+                    >
+                      Xóa hoạt động
+                    </button>
+                  )}
+                </div>
 
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider mb-2">Danh sách hoạt động ({activities.length})</h4>
-                <div className="space-y-3">
-                  {activities.map((act, idx) => (
-                    <div key={act.id} className="p-3 bg-slate-950 rounded border border-slate-800 text-xs space-y-1">
-                      <div className="flex justify-between font-semibold text-slate-200">
-                        <span>#{idx + 1}. {act.activityName}</span>
-                        <span className="text-cyan-400">{act.activityDate}</span>
-                      </div>
-                      <p className="text-slate-400">{act.description}</p>
-                      <div className="flex gap-4 text-slate-400 pt-1">
-                        <span>Tham gia: <strong className="text-emerald-400">{act.participantCount} người</strong></span>
-                        <span>Chi phí: <strong className="text-amber-400">{act.budgetSpent.toLocaleString('vi-VN')} VNĐ</strong></span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-300">Tên hoạt động *</label>
+                    <input
+                      type="text"
+                      value={act.activityName}
+                      onChange={(e) => {
+                        const next = [...activities]
+                        next[idx].activityName = e.target.value
+                        setActivities(next)
+                      }}
+                      placeholder="Nhập tên hoạt động..."
+                      className="w-full rounded-md border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-300">Ngày tổ chức</label>
+                    <input
+                      type="date"
+                      value={act.activityDate}
+                      onChange={(e) => {
+                        const next = [...activities]
+                        next[idx].activityDate = e.target.value
+                        setActivities(next)
+                      }}
+                      className="w-full rounded-md border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="flex justify-between pt-6 border-t border-slate-800">
-              <button
-                onClick={handlePrevStep}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
-              >
-                &larr; Quay lại sửa
-              </button>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSaveDraft}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold rounded-lg border border-cyan-500/30 text-xs"
-                >
-                  {isSubmitting ? 'Đang lưu...' : 'Lưu bản nháp'}
-                </button>
-                <button
-                  onClick={handleSubmitReport}
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg shadow-lg shadow-cyan-500/20 text-xs"
-                >
-                  {isSubmitting ? 'Đang gửi...' : 'Nộp báo cáo ngay'}
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-        </motion.div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/reports')}
+              className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
+            >
+              <Save size={18} /> {isSubmitting ? 'Đang lưu...' : 'Lưu dự thảo'}
+            </button>
+          </div>
+        </form>
       )}
     </div>
   )

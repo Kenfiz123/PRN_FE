@@ -353,6 +353,117 @@ class ApiService {
     });
   }
 
+  async uploadReportFile(formData) {
+    const url = this.buildUrl('/api/reports/upload');
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error = new Error(errorData.message || 'Không thể tải lên báo cáo.');
+      error.status = response.status;
+      throw error;
+    }
+
+    return this.parseResponse(response);
+  }
+
+  async updateUploadedReportFile(reportId, formData) {
+    const url = this.buildUrl(`/api/reports/${reportId}/uploaded-file`);
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error = new Error(errorData.message || 'Không thể thay đổi tệp báo cáo.');
+      error.status = response.status;
+      throw error;
+    }
+
+    return this.parseResponse(response);
+  }
+
+  async deleteUploadedReportFile(reportId) {
+    return this.request(`/api/reports/${reportId}/uploaded-file`, { method: 'DELETE' });
+  }
+
+  async downloadUploadedReportFile(reportId, fileName) {
+    const url = this.buildUrl(`/api/reports/${reportId}/uploaded-file/download`);
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (response.status === 403) {
+      const error = new Error('Bạn không có quyền tải tệp báo cáo này.');
+      error.status = 403;
+      throw error;
+    }
+    if (response.status === 404) {
+      const error = new Error('Tệp báo cáo không còn tồn tại hoặc không khả dụng.');
+      error.status = 404;
+      throw error;
+    }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error = new Error(errorData.message || 'Không thể tải tệp báo cáo.');
+      error.status = response.status;
+      throw error;
+    }
+
+    const blob = await response.blob();
+
+    let downloadFileName = fileName;
+    const disposition = response.headers.get('content-disposition');
+    if (disposition) {
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match && utf8Match[1]) {
+        downloadFileName = decodeURIComponent(utf8Match[1]);
+      } else {
+        const asciiMatch = disposition.match(/filename="?([^";]+)"?/i);
+        if (asciiMatch && asciiMatch[1]) {
+          downloadFileName = asciiMatch[1];
+        }
+      }
+    }
+    if (!downloadFileName) {
+      downloadFileName = `report-file-${reportId}`;
+    }
+
+    const objectUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = downloadFileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(objectUrl);
+    document.body.removeChild(a);
+  }
+
   // Activity endpoints
   async getActivities(clubId) {
     const query = clubId ? `?clubId=${clubId}` : '';
@@ -470,27 +581,66 @@ class ApiService {
   }
 
   async downloadExport(id, fileName) {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/api/exports/${id}/download`, {
+    const url = this.buildUrl(`/api/exports/${id}/download`);
+    const token = this.getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
+    if (response.status === 403) {
+      const error = new Error('Bạn không có quyền tải tệp này.');
+      error.status = 403;
+      throw error;
+    }
+    if (response.status === 404) {
+      const error = new Error('Tệp xuất không còn tồn tại hoặc không khả dụng.');
+      error.status = 404;
+      throw error;
+    }
+    if (response.status === 410) {
+      const error = new Error('Tệp xuất đã hết hạn.');
+      error.status = 410;
+      throw error;
+    }
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to download file');
+      const error = new Error(errorData.message || 'Không thể tải tệp xuất.');
+      error.status = response.status;
+      throw error;
     }
 
     const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+
+    let downloadFileName = fileName;
+    const disposition = response.headers.get('content-disposition');
+    if (disposition) {
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match && utf8Match[1]) {
+        downloadFileName = decodeURIComponent(utf8Match[1]);
+      } else {
+        const asciiMatch = disposition.match(/filename="?([^";]+)"?/i);
+        if (asciiMatch && asciiMatch[1]) {
+          downloadFileName = asciiMatch[1];
+        }
+      }
+    }
+    if (!downloadFileName) {
+      downloadFileName = `export-${id}`;
+    }
+
+    const objectUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName || `export-${id}`;
+    a.href = objectUrl;
+    a.download = downloadFileName;
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(objectUrl);
     document.body.removeChild(a);
   }
 
