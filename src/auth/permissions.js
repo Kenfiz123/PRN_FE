@@ -80,6 +80,7 @@ const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.VIEW_CLUBS,
     PERMISSIONS.VIEW_REPORTS,
     PERMISSIONS.VIEW_ACTIVITIES,
+    PERMISSIONS.VIEW_FINANCE,
     PERMISSIONS.VIEW_NOTIFICATIONS,
     PERMISSIONS.VIEW_PROFILE,
   ]),
@@ -122,7 +123,11 @@ export function hasPermission(user, clubAccess = [], permission) {
     return clubAccess.some(access => access.isManager)
   }
 
-  if (permission === PERMISSIONS.VIEW_FINANCE || permission === PERMISSIONS.MANAGE_FINANCE) {
+  if (permission === PERMISSIONS.VIEW_FINANCE) {
+    return clubAccess.some(access => access.isManager || access.isTreasurer)
+  }
+
+  if (permission === PERMISSIONS.MANAGE_FINANCE) {
     return clubAccess.some(access => access.isTreasurer)
   }
 

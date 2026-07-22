@@ -3,16 +3,57 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { useNotifications } from '../context/NotificationContext'
 import { PERMISSIONS } from '../auth/permissions'
+
+const VIETNAM_OFFSET_MS = 7 * 60 * 60 * 1000
+
+function getNextActivityDate(activity, now = new Date()) {
+  const status = activity.status?.toUpperCase()
+  if (status === 'COMPLETED' || status === 'CANCELLED') return null
+
+  const meetingDays = Array.isArray(activity.meetingDays)
+    ? activity.meetingDays.map(Number).filter(day => Number.isInteger(day) && day >= 0 && day <= 6)
+    : []
+
+  if (meetingDays.length === 0) {
+    const start = new Date(activity.startTimeUtc)
+    return Number.isNaN(start.getTime()) || start <= now ? null : start
+  }
+
+  const vietnamNow = new Date(now.getTime() + VIETNAM_OFFSET_MS)
+  const scheduleStart = new Date(new Date(activity.startTimeUtc).getTime() + VIETNAM_OFFSET_MS)
+  const todayValue = Date.UTC(vietnamNow.getUTCFullYear(), vietnamNow.getUTCMonth(), vietnamNow.getUTCDate())
+  const scheduleStartValue = Date.UTC(scheduleStart.getUTCFullYear(), scheduleStart.getUTCMonth(), scheduleStart.getUTCDate())
+
+  for (let offset = 0; offset <= 7; offset += 1) {
+    const candidateValue = todayValue + offset * 24 * 60 * 60 * 1000
+    const candidate = new Date(candidateValue)
+    if (candidateValue >= scheduleStartValue && meetingDays.includes(candidate.getUTCDay())) {
+      return new Date(candidateValue - VIETNAM_OFFSET_MS)
+    }
+  }
+
+  return null
+}
+
+function formatActivityDate(value) {
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  }).format(value)
+}
 
 export default function DashboardPage() {
   const { user, clubAccess, hasPermission } = useAuth()
+  const { notifications } = useNotifications()
   const [data, setData] = useState({
     clubs: [],
     reports: [],
     activities: [],
     proposals: [],
-    notifications: [],
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -24,7 +65,6 @@ export default function DashboardPage() {
         hasPermission(PERMISSIONS.VIEW_REPORTS) ? api.getReports({ page: 1, pageSize: 5 }) : Promise.resolve({ items: [] }),
         hasPermission(PERMISSIONS.VIEW_ACTIVITIES) ? api.getActivities() : Promise.resolve([]),
         hasPermission(PERMISSIONS.VIEW_FINANCE) ? api.getBudgetProposals({ page: 1, pageSize: 5 }) : Promise.resolve({ items: [] }),
-        hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) ? api.getNotifications(false) : Promise.resolve([]),
       ]
       const results = await Promise.allSettled(requests)
       if (!active) return
@@ -33,7 +73,6 @@ export default function DashboardPage() {
         reports: results[1].status === 'fulfilled' && Array.isArray(results[1].value?.items) ? results[1].value.items : [],
         activities: results[2].status === 'fulfilled' && Array.isArray(results[2].value) ? results[2].value : [],
         proposals: results[3].status === 'fulfilled' && Array.isArray(results[3].value?.items) ? results[3].value.items : [],
-        notifications: results[4].status === 'fulfilled' && Array.isArray(results[4].value) ? results[4].value : [],
       })
       setIsLoading(false)
     }
@@ -42,10 +81,14 @@ export default function DashboardPage() {
   }, [hasPermission])
 
   const approvedClubs = clubAccess.filter(access => access.isApprovedMember || access.isManager)
-  const unreadNotifications = data.notifications.filter(item => !item.isRead)
+  const unreadNotifications = notifications.filter(item => !item.isRead)
   const upcomingActivities = data.activities
-    .filter(item => new Date(item.startTimeUtc) > new Date() && item.status?.toUpperCase() !== 'COMPLETED')
-    .sort((a, b) => new Date(a.startTimeUtc) - new Date(b.startTimeUtc))
+    .map(activity => ({ activity, nextDate: getNextActivityDate(activity) }))
+    .filter(item => item.nextDate)
+    .sort((a, b) => a.nextDate - b.nextDate)
+    .slice(0, 4)
+  const recentNotifications = [...notifications]
+    .sort((a, b) => new Date(b.createdAtUtc) - new Date(a.createdAtUtc))
     .slice(0, 4)
 
   const cards = [
@@ -95,9 +138,10 @@ export default function DashboardPage() {
                   <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No upcoming activities.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
-                    {upcomingActivities.map(activity => (
+                    {upcomingActivities.map(({ activity, nextDate }) => (
                       <div key={activity.id} className="rounded-xl bg-slate-950/50 p-4">
-                        <div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-white">{activity.title}</p><p className="mt-1 text-xs text-cyan-300">{activity.clubName}</p></div><time className="text-right text-xs text-gray-500">{new Date(activity.startTimeUtc).toLocaleDateString('en-US')}</time></div>
+                        <div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-white">{activity.title}</p><p className="mt-1 text-xs text-cyan-300">{activity.clubName}</p></div><time className="text-right text-xs text-gray-500">{formatActivityDate(nextDate)}</time></div>
+                        {activity.meetingDays?.length > 0 && <p className="mt-2 text-xs text-amber-300">Weekly schedule · Vietnam time</p>}
                       </div>
                     ))}
                   </div>
@@ -108,18 +152,26 @@ export default function DashboardPage() {
             {hasPermission(PERMISSIONS.VIEW_NOTIFICATIONS) && (
               <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">New notifications</h3>
+                  <h3 className="text-lg font-bold text-white">Recent notifications</h3>
                   <Link to="/notifications" className="text-sm font-semibold text-cyan-300">View all</Link>
                 </div>
-                {unreadNotifications.length === 0 ? (
-                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No unread notifications.</p>
+                {recentNotifications.length === 0 ? (
+                  <p className="mt-5 rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-gray-500">No notifications yet.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
-                    {unreadNotifications.slice(0, 4).map(notification => (
-                      <div key={notification.id} className="rounded-xl bg-slate-950/50 p-4">
-                        <p className="font-semibold text-white">{notification.title}</p>
-                        <p className="mt-1 line-clamp-2 text-sm text-gray-400">{notification.message}</p>
-                      </div>
+                    {recentNotifications.map(notification => (
+                      <Link key={notification.id} to="/notifications" className="block rounded-xl bg-slate-950/50 p-4 transition hover:bg-slate-950/80">
+                        <div className="flex items-start gap-3">
+                          <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-600' : 'bg-cyan-400'}`} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="font-semibold text-white">{notification.title}</p>
+                              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{notification.isRead ? 'Read' : 'Unread'}</span>
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-sm text-gray-400">{notification.message}</p>
+                          </div>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 )}

@@ -28,8 +28,12 @@ export default function ClubMembersPage() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [pendingTreasurer, setPendingTreasurer] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [busy, setBusy] = useState(false)
+
+  const treasurerCount = (club?.members || []).filter(member => member.status === 'Approved' && member.role === 'TREASURER').length
+  const treasurerSlotsRemaining = Math.max(0, 2 - treasurerCount)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -82,6 +86,21 @@ export default function ClubMembersPage() {
     }
   }
 
+  const assignTreasurer = async () => {
+    if (!pendingTreasurer || busy) return
+    setBusy(true)
+    try {
+      await api.assignClubTreasurer(clubId, pendingTreasurer.userId, pendingTreasurer.fullName)
+      success(`${pendingTreasurer.fullName} is now a club treasurer.`)
+      setPendingTreasurer(null)
+      await load()
+    } catch (err) {
+      error(err.message || 'Unable to assign this member as treasurer.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -90,7 +109,10 @@ export default function ClubMembersPage() {
           <h2 className="text-2xl font-bold text-white">{club?.name || 'Club'} Members</h2>
           <p className="mt-1 text-sm text-gray-400">Search members, review participation, and manage the active roster.</p>
         </div>
-        <Link to={`/clubs/${clubId}/attendance`} className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 text-center font-semibold text-white">Manage activity attendance</Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-3 text-center"><p className="text-xs font-semibold uppercase tracking-wider text-purple-300">Treasurers</p><p className="mt-1 font-bold text-white">{treasurerCount}/2 assigned</p></div>
+          <Link to={`/clubs/${clubId}/attendance`} className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 text-center font-semibold text-white">Manage activity attendance</Link>
+        </div>
       </div>
 
       <div className="grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:grid-cols-5">
@@ -111,10 +133,10 @@ export default function ClubMembersPage() {
                 {data.items.map(member => <tr key={member.id} className="hover:bg-cyan-500/5">
                   <td className="px-5 py-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/15 font-bold text-cyan-300">{member.fullName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase()}</div><div><p className="font-semibold text-white">{member.fullName}</p><p className="text-xs text-gray-500">{member.status}</p></div></div></td>
                   <td className="px-5 py-4 text-gray-300"><p>{member.email}</p><p className="text-xs text-gray-500">{member.phoneNumber || 'No phone'}</p></td>
-                  <td className="px-5 py-4"><span className="rounded-full bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-300">{member.role}</span></td>
+                  <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${member.role === 'CLUB_OWNER' ? 'bg-amber-500/10 text-amber-300' : 'bg-purple-500/10 text-purple-300'}`}>{member.role === 'CLUB_OWNER' ? 'CLUB OWNER' : member.role}</span></td>
                   <td className="px-5 py-4 text-gray-300">{formatDate(member.joinedAtUtc)}</td>
                   <td className="px-5 py-4"><Participation value={member.participation} /></td>
-                  <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => openDetail(member)} className="rounded-lg bg-cyan-500/10 px-3 py-2 font-semibold text-cyan-300">View</button><button type="button" onClick={() => setPendingDelete(member)} className="rounded-lg bg-rose-500/10 px-3 py-2 font-semibold text-rose-300">Remove</button></div></td>
+                  <td className="px-5 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => openDetail(member)} className="rounded-lg bg-cyan-500/10 px-3 py-2 font-semibold text-cyan-300">View</button>{member.status === 'Approved' && !['TREASURER', 'CLUB_OWNER'].includes(member.role) && <button type="button" onClick={() => setPendingTreasurer(member)} disabled={treasurerSlotsRemaining === 0} title={treasurerSlotsRemaining === 0 ? 'This club already has two treasurers.' : 'Assign as treasurer'} className="rounded-lg bg-purple-500/10 px-3 py-2 font-semibold text-purple-300 disabled:cursor-not-allowed disabled:opacity-40">Make treasurer</button>}{member.role !== 'CLUB_OWNER' && <button type="button" onClick={() => setPendingDelete(member)} className="rounded-lg bg-rose-500/10 px-3 py-2 font-semibold text-rose-300">Remove</button>}</div></td>
                 </tr>)}
               </tbody>
             </table>
@@ -129,6 +151,10 @@ export default function ClubMembersPage() {
           <div className="rounded-xl bg-neutral-100 p-4"><p className="text-sm font-semibold">Participation rate</p><p className="mt-1 text-3xl font-bold text-cyan-700">{Number(selected.participation.participationRate).toFixed(2)}%</p><p className="text-sm text-neutral-500">{selected.participation.attendedActivities} present out of {selected.participation.eligibleActivities} eligible activities</p></div>
           <div><h3 className="font-bold">Activity history</h3><div className="mt-3 divide-y divide-neutral-200 rounded-xl border border-neutral-200">{selected.activityHistory.length ? selected.activityHistory.map(item => <div key={item.activityId} className="flex items-center justify-between gap-4 p-3"><div><p className="font-semibold">{item.title}</p><p className="text-xs text-neutral-500">{formatDate(item.startTimeUtc)} · {item.activityStatus}</p></div><span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">{item.attendanceStatus}</span></div>) : <p className="p-6 text-center text-neutral-500">No eligible activities yet.</p>}</div></div>
         </div>}
+      </Modal>
+
+      <Modal isOpen={Boolean(pendingTreasurer)} onClose={() => !busy && setPendingTreasurer(null)} title="Assign Treasurer" size="sm">
+        <div className="space-y-5 text-neutral-800"><p>Assign <strong>{pendingTreasurer?.fullName}</strong> as a club treasurer?</p><div className="rounded-lg bg-purple-50 p-3 text-sm text-purple-900"><strong>{treasurerSlotsRemaining}</strong> of 2 treasurer positions remaining. Treasurers receive access to the club's finance functions.</div><div className="flex gap-3"><button type="button" onClick={() => setPendingTreasurer(null)} disabled={busy} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold disabled:opacity-50">Cancel</button><button type="button" onClick={assignTreasurer} disabled={busy || treasurerSlotsRemaining === 0} className="flex-1 rounded-lg bg-purple-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{busy ? 'Assigning...' : 'Assign treasurer'}</button></div></div>
       </Modal>
 
       <Modal isOpen={Boolean(pendingDelete)} onClose={() => !busy && setPendingDelete(null)} title="Remove Member" size="sm">

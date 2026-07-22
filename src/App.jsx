@@ -140,7 +140,7 @@ export default function App() {
       <Route
         path="/reports/create"
         element={
-          <LayoutRoute title="Tạo báo cáo" subtitle="Lập báo cáo hoạt động kỳ mới" permission={PERMISSIONS.AUTHOR_REPORTS}>
+          <LayoutRoute title="Create Report" subtitle="Create a report for a new activity period" permission={PERMISSIONS.AUTHOR_REPORTS}>
             <CreateReportPage />
           </LayoutRoute>
         }
@@ -148,7 +148,7 @@ export default function App() {
       <Route
         path="/reports/:id"
         element={
-          <LayoutRoute title="Chi tiết báo cáo" subtitle="Nội dung báo cáo hoạt động" permission={PERMISSIONS.VIEW_REPORTS}>
+          <LayoutRoute title="Report Details" subtitle="Activity report content" permission={PERMISSIONS.VIEW_REPORTS}>
             <ReportDetailPage />
           </LayoutRoute>
         }
@@ -156,7 +156,7 @@ export default function App() {
       <Route
         path="/reports/:id/edit"
         element={
-          <LayoutRoute title="Chỉnh sửa báo cáo" subtitle="Cập nhật báo cáo hoạt động" permission={PERMISSIONS.AUTHOR_REPORTS}>
+          <LayoutRoute title="Edit Report" subtitle="Update the activity report" permission={PERMISSIONS.AUTHOR_REPORTS}>
             <CreateReportPage />
           </LayoutRoute>
         }

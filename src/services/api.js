@@ -318,6 +318,13 @@ class ApiService {
     return this.request(`/api/clubs/${clubId}/members/${memberId}?${query}`);
   }
 
+  async assignClubTreasurer(clubId, memberUserId, memberName) {
+    return this.request(`/api/clubs/${clubId}/treasurers`, {
+      method: 'POST',
+      body: JSON.stringify({ memberUserId, memberName }),
+    });
+  }
+
   async deleteClubMember(clubId, memberId) {
     return this.request(`/api/clubs/${clubId}/members/${memberId}`, { method: 'DELETE' });
   }
@@ -457,6 +464,20 @@ class ApiService {
     return this.request(`/api/finance/proposals/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify({ approvedAmount, note }),
+    });
+  }
+
+  async managerApproveBudget(id, note) {
+    return this.request(`/api/finance/proposals/${id}/manager-approve`, {
+      method: 'POST',
+      body: JSON.stringify({ approvedAmount: null, note }),
+    });
+  }
+
+  async managerRejectBudget(id, note) {
+    return this.request(`/api/finance/proposals/${id}/manager-reject`, {
+      method: 'POST',
+      body: JSON.stringify({ approvedAmount: null, note }),
     });
   }
 

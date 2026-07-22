@@ -12,7 +12,7 @@ export function NotificationProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState(null)
 
-  const refreshNotifications = useCallback(async () => {
+  const refreshNotifications = useCallback(async ({ silent = false } = {}) => {
     if (!canViewNotifications) {
       setNotifications([])
       setLoadError(null)
@@ -20,7 +20,7 @@ export function NotificationProvider({ children }) {
       return []
     }
 
-    setIsLoading(true)
+    if (!silent) setIsLoading(true)
     try {
       const result = await api.getNotifications(false)
       const rows = Array.isArray(result) ? result : []
@@ -28,18 +28,35 @@ export function NotificationProvider({ children }) {
       setLoadError(null)
       return rows
     } catch (error) {
-      setNotifications([])
       setLoadError(error)
       throw error
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }, [canViewNotifications])
 
   useEffect(() => {
     if (authLoading) return
     refreshNotifications().catch(() => {})
-  }, [authLoading, refreshNotifications, user?.id])
+
+    if (!canViewNotifications) return undefined
+
+    const refreshSilently = () => refreshNotifications({ silent: true }).catch(() => {})
+    const intervalId = window.setInterval(refreshSilently, 15000)
+    const handleFocus = () => refreshSilently()
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshSilently()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [authLoading, canViewNotifications, refreshNotifications, user?.id])
 
   const markNotificationRead = useCallback(async (id) => {
     await api.markNotificationRead(id)

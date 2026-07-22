@@ -6,18 +6,19 @@ import { useToast } from '../context/ToastContext'
 import api from '../services/api'
 
 const REPORT_TYPES = [
-  { value: 'QUARTERLY', label: 'Báo cáo quý (Quarterly)' },
-  { value: 'MONTHLY', label: 'Báo cáo tháng (Monthly)' },
-  { value: 'SEMESTER', label: 'Báo cáo học kỳ (Semester)' },
-  { value: 'ANNUAL', label: 'Báo cáo năm (Annual)' },
-  { value: 'AD_HOC', label: 'Báo cáo đột xuất (Ad-hoc)' },
+  { value: 'QUARTERLY', label: 'Quarterly report' },
+  { value: 'MONTHLY', label: 'Monthly report' },
+  { value: 'SEMESTER', label: 'Semester report' },
+  { value: 'ANNUAL', label: 'Annual report' },
+  { value: 'AD_HOC', label: 'Ad-hoc report' },
+  { value: 'FUTURE_EVENT', label: 'Future event proposal' },
 ]
 
 const DEFAULT_PERIODS = [
-  { period: '2026-Q3', label: 'Quý III / 2026', dueDate: '2026-09-30' },
-  { period: '2026-Q4', label: 'Quý IV / 2026', dueDate: '2026-12-31' },
-  { period: '2026-Q2', label: 'Quý II / 2026', dueDate: '2026-06-30' },
-  { period: '2026-HK1', label: 'Học kỳ I / 2026-2027', dueDate: '2026-11-15' },
+  { period: '2026-Q3', label: 'Quarter III / 2026', dueDate: '2026-09-30' },
+  { period: '2026-Q4', label: 'Quarter IV / 2026', dueDate: '2026-12-31' },
+  { period: '2026-Q2', label: 'Quarter II / 2026', dueDate: '2026-06-30' },
+  { period: '2026-HK1', label: 'Semester I / 2026-2027', dueDate: '2026-11-15' },
 ]
 
 function generateUniqueId() {
@@ -48,13 +49,14 @@ export default function CreateReportPage() {
   const [challenges, setChallenges] = useState('')
   const [recommendations, setRecommendations] = useState('')
   const [nextPeriodPlan, setNextPeriodPlan] = useState('')
+  const isFutureEvent = reportType === 'FUTURE_EVENT'
 
   const [activities, setActivities] = useState([
     {
       id: generateUniqueId(),
       dbId: null,
       activityName: '',
-      activityType: 'Chuyên môn',
+      activityType: 'Professional',
       activityDate: new Date().toISOString().split('T')[0],
       location: '',
       partnerUnit: '',
@@ -71,6 +73,18 @@ export default function CreateReportPage() {
   const userManagedClubs = useMemo(() => {
     return clubAccess.filter((access) => access.isManager)
   }, [clubAccess])
+
+  useEffect(() => {
+    if (isFutureEvent) {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const minimumDate = tomorrow.toISOString().split('T')[0]
+      setActivities((current) => current.slice(0, 1).map((activity) => ({
+        ...activity,
+        activityDate: activity.activityDate >= minimumDate ? activity.activityDate : minimumDate,
+      })))
+    }
+  }, [isFutureEvent])
 
   useEffect(() => {
     async function loadInitialData() {
@@ -122,7 +136,7 @@ export default function CreateReportPage() {
               id: generateUniqueId(),
               dbId: d.id,
               activityName: d.activityName || '',
-              activityType: d.activityType || 'Chuyên môn',
+              activityType: d.activityType || 'Professional',
               activityDate: d.activityDate || new Date().toISOString().split('T')[0],
               location: d.location || '',
               partnerUnit: d.partnerUnit || '',
@@ -137,7 +151,7 @@ export default function CreateReportPage() {
           )
         }
       } catch (err) {
-        error(err.message || 'Không thể tải thông tin báo cáo để chỉnh sửa.')
+        error(err.message || 'Unable to load the report for editing.')
         navigate('/reports')
       } finally {
         setIsLoading(false)
@@ -162,7 +176,9 @@ export default function CreateReportPage() {
     api.getReports({ page: 1, pageSize: 100 })
       .then((result) => {
         const items = Array.isArray(result?.items) ? result.items : Array.isArray(result) ? result : []
-        const match = items.find((item) => Number(item.clubId) === Number(clubId) && item.period === period && item.reportType === reportType)
+        const match = reportType === 'FUTURE_EVENT'
+          ? null
+          : items.find((item) => Number(item.clubId) === Number(clubId) && item.period === period && item.reportType === reportType)
         if (isActive) setExistingReport(match || null)
       })
       .catch(() => { if (isActive) setExistingReport(null) })
@@ -183,7 +199,7 @@ export default function CreateReportPage() {
         id: generateUniqueId(),
         dbId: null,
         activityName: '',
-        activityType: 'Chuyên môn',
+        activityType: 'Professional',
         activityDate: new Date().toISOString().split('T')[0],
         location: '',
         partnerUnit: '',
@@ -206,7 +222,7 @@ export default function CreateReportPage() {
 
   const removeActivity = (id) => {
     if (activities.length <= 1) {
-      error('Báo cáo hoạt động phải có ít nhất 1 hoạt động.')
+      error('An activity report must include at least one activity.')
       return
     }
     setActivities((prev) => prev.filter((act) => act.id !== id))
@@ -214,41 +230,58 @@ export default function CreateReportPage() {
 
   const validateStep1 = () => {
     if (!clubId) {
-      error('Vui lòng chọn Câu lạc bộ.')
+      error('Please select a club.')
       return false
     }
     if (!period) {
-      error('Vui lòng chọn Kỳ báo cáo.')
+      error('Please select a reporting period.')
       return false
     }
     return true
   }
 
   const validateStep2 = () => {
+    if (isFutureEvent && activities.length !== 1) {
+      error('A future event proposal must contain exactly one planned event.')
+      return false
+    }
     if (activities.length === 0) {
-      error('Báo cáo phải chứa ít nhất 1 hoạt động.')
+      error('The report must include at least one activity.')
       return false
     }
     for (let i = 0; i < activities.length; i++) {
       const act = activities[i]
       if (!act.activityName.trim()) {
-        error(`Vui lòng nhập tên cho Hoạt động ${i + 1}.`)
+        error(`Please enter a name for Activity ${i + 1}.`)
         return false
       }
       if (!act.activityDate) {
-        error(`Vui lòng chọn ngày tổ chức cho Hoạt động ${i + 1}.`)
+        error(`Please select a date for Activity ${i + 1}.`)
         return false
       }
+      if (isFutureEvent) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const eventDate = new Date(`${act.activityDate}T00:00:00`)
+        if (eventDate <= today) {
+          error('The planned event date must be in the future.')
+          return false
+        }
+        if (!act.location.trim()) {
+          error('Please enter the planned event location.')
+          return false
+        }
+      }
       if (!act.description.trim()) {
-        error(`Vui lòng nhập mô tả cho Hoạt động ${i + 1}.`)
+        error(`Please enter a description for Activity ${i + 1}.`)
         return false
       }
       if (act.participantCount < 0) {
-        error(`Số người tham gia Hoạt động ${i + 1} không được âm.`)
+        error(`The participant count for Activity ${i + 1} cannot be negative.`)
         return false
       }
       if (!act.outcome.trim()) {
-        error(`Vui lòng nhập kết quả đạt được cho Hoạt động ${i + 1}.`)
+        error(`Please enter the outcome for Activity ${i + 1}.`)
         return false
       }
     }
@@ -257,11 +290,11 @@ export default function CreateReportPage() {
 
   const validateStep3 = () => {
     if (!executiveSummary.trim()) {
-      error('Vui lòng nhập Tóm tắt hoạt động trong kỳ.')
+      error('Please enter the activity summary for this period.')
       return false
     }
     if (!achievements.trim()) {
-      error('Vui lòng nhập Thành tựu nổi bật trong kỳ.')
+      error('Please enter the key achievements for this period.')
       return false
     }
     return true
@@ -298,10 +331,10 @@ export default function CreateReportPage() {
         objective: act.objective.trim() || null,
         description: act.description.trim(),
         targetParticipantCount: Number(act.targetParticipantCount) || 0,
-        participantCount: Number(act.participantCount) || 0,
+        participantCount: isFutureEvent ? 0 : Number(act.participantCount) || 0,
         outcome: act.outcome.trim(),
-        budgetSpent: Number(act.budgetSpent) || 0,
-        evidenceUrl: act.evidenceUrl.trim() || null,
+        budgetSpent: isFutureEvent ? null : Number(act.budgetSpent) || 0,
+        evidenceUrl: isFutureEvent ? null : act.evidenceUrl.trim() || null,
         sortOrder: index + 1,
       })),
     }
@@ -315,14 +348,14 @@ export default function CreateReportPage() {
       let result
       if (isEditMode) {
         result = await api.updateReport(id, payload)
-        success('Đã cập nhật bản nháp báo cáo thành công!')
+        success('Report draft updated successfully!')
       } else {
         result = await api.createReport(payload)
-        success('Đã lưu bản nháp báo cáo thành công!')
+        success('Report draft saved successfully!')
       }
       navigate(`/reports/${result.id}`)
     } catch (err) {
-      error(err.message || 'Không thể lưu bản nháp báo cáo.')
+      error(err.message || 'Unable to save the report draft.')
     } finally {
       setIsSubmitting(false)
     }
@@ -342,10 +375,12 @@ export default function CreateReportPage() {
       }
 
       await api.submitReport(targetId)
-      success('Đã nộp báo cáo hoạt động thành công! Đang chờ duyệt.')
+      success(isFutureEvent
+        ? 'Future event report submitted. The club treasurer has been asked to add the budget.'
+        : 'Activity report submitted successfully and is awaiting review!')
       navigate(`/reports/${targetId}`)
     } catch (err) {
-      error(err.message || 'Không thể nộp báo cáo.')
+      error(err.message || 'Unable to submit the report.')
     } finally {
       setIsSubmitting(false)
     }
@@ -365,26 +400,26 @@ export default function CreateReportPage() {
       <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/75 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
           <h1 className="text-2xl font-bold font-orbitron text-slate-100 sm:text-3xl">
-            {isEditMode ? 'CHỈNH SỬA BÁO CÁO HOẠT ĐỘNG' : 'LẬP BÁO CÁO HOẠT ĐỘNG CLB'}
+            {isEditMode ? 'EDIT ACTIVITY REPORT' : 'CREATE CLUB ACTIVITY REPORT'}
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Quy trình lập và nộp báo cáo tổng kết hoạt động định kỳ cho CLB
+            Create and submit a periodic club activity report
           </p>
         </div>
         <button
           onClick={() => navigate('/reports')}
           className="min-h-11 px-4 py-2 text-sm font-semibold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all"
         >
-          Hủy & Quay lại
+          Cancel and go back
         </button>
       </div>
 
       {existingReport && (
         <div className="flex flex-col gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100 sm:flex-row sm:items-center sm:justify-between">
-          <p>Đã có báo cáo cho câu lạc bộ, kỳ và loại báo cáo này.</p>
+          <p>A report already exists for this club, period, and report type.</p>
           <div className="flex shrink-0 gap-3 font-semibold">
-            <button onClick={() => navigate(`/reports/${existingReport.id}`)} className="text-cyan-200 hover:text-cyan-100">Xem báo cáo</button>
-            {['DRAFT', 'REJECTED'].includes(String(existingReport.status || '').toUpperCase()) && <button onClick={() => navigate(`/reports/${existingReport.id}/edit`)} className="text-cyan-200 hover:text-cyan-100">Chỉnh sửa</button>}
+            <button onClick={() => navigate(`/reports/${existingReport.id}`)} className="text-cyan-200 hover:text-cyan-100">View report</button>
+            {['DRAFT', 'REJECTED'].includes(String(existingReport.status || '').toUpperCase()) && <button onClick={() => navigate(`/reports/${existingReport.id}/edit`)} className="text-cyan-200 hover:text-cyan-100">Edit</button>}
           </div>
         </div>
       )}
@@ -393,10 +428,10 @@ export default function CreateReportPage() {
       <div className="p-3 sm:p-4 border border-slate-800 bg-slate-900/75 rounded-xl">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-center text-sm font-semibold">
           {[
-            { stepNum: 1, label: '1. Thông tin chung' },
-            { stepNum: 2, label: '2. Hoạt động trong kỳ' },
-            { stepNum: 3, label: '3. Tổng kết & Kế hoạch' },
-            { stepNum: 4, label: '4. Preview & Gửi' },
+            { stepNum: 1, label: '1. General information' },
+            { stepNum: 2, label: '2. Period activities' },
+            { stepNum: 3, label: '3. Summary and plan' },
+            { stepNum: 4, label: '4. Preview and submit' },
           ].map((s) => (
             <button
               key={s.stepNum}
@@ -422,11 +457,11 @@ export default function CreateReportPage() {
       {step === 1 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl space-y-6">
-            <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 1: THÔNG TIN CHUNG</h2>
+            <h2 className="text-lg font-bold font-orbitron text-cyan-400">STEP 1: GENERAL INFORMATION</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Câu lạc bộ <span className="text-rose-500">*</span>
+                  Club <span className="text-rose-500">*</span>
                 </label>
                 {managedClubs.length > 0 ? (
                   <select
@@ -442,14 +477,14 @@ export default function CreateReportPage() {
                   </select>
                 ) : (
                   <p className="text-rose-400 text-xs py-2">
-                    Bạn chưa là Manager của CLB nào hoặc danh sách đang tải.
+                    You do not manage any clubs yet, or the club list is still loading.
                   </p>
                 )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Kỳ báo cáo <span className="text-rose-500">*</span>
+                  Reporting period <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={period}
@@ -458,7 +493,7 @@ export default function CreateReportPage() {
                 >
                   {deadlines.map((d) => (
                     <option key={d.period} value={d.period}>
-                      {d.label || d.period} (Hạn: {d.dueDate})
+                      {d.label || d.period} (Due: {d.dueDate})
                     </option>
                   ))}
                 </select>
@@ -466,7 +501,7 @@ export default function CreateReportPage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Loại báo cáo <span className="text-rose-500">*</span>
+                  Report type <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={reportType}
@@ -483,7 +518,7 @@ export default function CreateReportPage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Hạn nộp báo cáo (Tự động từ hệ thống)
+                  Report deadline (set automatically)
                 </label>
                 <input
                   type="text"
@@ -495,7 +530,7 @@ export default function CreateReportPage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Người lập báo cáo
+                  Report author
                 </label>
                 <input
                   type="text"
@@ -507,12 +542,12 @@ export default function CreateReportPage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                  Trạng thái khởi tạo
+                  Initial status
                 </label>
                 <input
                   type="text"
                   readOnly
-                  value="Draft (Bản nháp)"
+                  value="Draft"
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-amber-400 cursor-not-allowed font-semibold"
                 />
               </div>
@@ -523,7 +558,7 @@ export default function CreateReportPage() {
                 onClick={handleNextStep}
                 className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-lg hover:bg-cyan-400 transition-all text-xs"
               >
-                Tiếp tục: BƯỚC 2 (Hoạt động) &rarr;
+                Continue: STEP 2 (Activities) &rarr;
               </button>
             </div>
           </div>
@@ -535,31 +570,33 @@ export default function CreateReportPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-orbitron font-semibold text-cyan-400">
-              CÁC HOẠT ĐỘNG ĐÃ THỰC HIỆN TRONG KỲ ({activities.length})
+              {isFutureEvent ? 'PLANNED FUTURE EVENT' : `ACTIVITIES COMPLETED DURING THE PERIOD (${activities.length})`}
             </h2>
-            <button
+            {!isFutureEvent && <button
               onClick={addActivity}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-semibold rounded-lg border border-cyan-500/30 transition-all"
             >
-              + Thêm hoạt động
-            </button>
+              + Add activity
+            </button>}
           </div>
 
-          <div className="grid grid-cols-3 gap-4 bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-4 text-center">
+          {isFutureEvent && <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-sm leading-6 text-purple-100">After submission, the club treasurer will receive a notification to add the event budget. Financial information is not entered in this content report.</div>}
+
+          <div className={`grid gap-4 bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-4 text-center ${isFutureEvent ? 'grid-cols-2' : 'grid-cols-3'}`}>
             <div>
-              <p className="text-xs text-slate-400 uppercase">Tổng số hoạt động</p>
+              <p className="text-xs text-slate-400 uppercase">Total activities</p>
               <p className="text-xl font-orbitron font-bold text-cyan-400">{totals.totalActivities}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-400 uppercase">Tổng người tham gia</p>
-              <p className="text-xl font-orbitron font-bold text-emerald-400">{totals.totalParticipants} người</p>
+              <p className="text-xs text-slate-400 uppercase">{isFutureEvent ? 'Expected participants' : 'Total participants'}</p>
+              <p className="text-xl font-orbitron font-bold text-emerald-400">{isFutureEvent ? activities[0]?.targetParticipantCount || 0 : totals.totalParticipants} people</p>
             </div>
-            <div>
-              <p className="text-xs text-slate-400 uppercase">Tổng chi phí thực tế</p>
+            {!isFutureEvent && <div>
+              <p className="text-xs text-slate-400 uppercase">Total actual cost</p>
               <p className="text-xl font-orbitron font-bold text-amber-400">
-                {totals.totalBudgetSpent.toLocaleString('vi-VN')} VNĐ
+                {totals.totalBudgetSpent.toLocaleString('en-US')} VND
               </p>
-            </div>
+            </div>}
           </div>
 
           {activities.map((act, index) => (
@@ -569,15 +606,15 @@ export default function CreateReportPage() {
             >
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <span className="font-orbitron font-bold text-cyan-400 text-sm">
-                  HOẠT ĐỘNG #{index + 1}
+                  ACTIVITY #{index + 1}
                 </span>
-                {activities.length > 1 && (
+                {!isFutureEvent && activities.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeActivity(act.id)}
                     className="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 bg-rose-950/40 rounded border border-rose-500/30"
                   >
-                    Xóa hoạt động này
+                    Remove this activity
                   </button>
                 )}
               </div>
@@ -585,33 +622,33 @@ export default function CreateReportPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Tên hoạt động <span className="text-rose-500">*</span>
+                    Activity name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={act.activityName}
                     onChange={(e) => updateActivityField(act.id, 'activityName', e.target.value)}
-                    placeholder="VD: Workshop Lập trình Microservices với .NET 8"
+                    placeholder="Example: Microservices Programming Workshop with .NET 8"
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Loại hoạt động
+                    Activity type
                   </label>
                   <input
                     type="text"
                     value={act.activityType}
                     onChange={(e) => updateActivityField(act.id, 'activityType', e.target.value)}
-                    placeholder="VD: Chuyên môn / Phong trào / Hợp tác"
+                    placeholder="Example: Professional / Community / Partnership"
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Ngày tổ chức <span className="text-rose-500">*</span>
+                    Activity date <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -623,81 +660,81 @@ export default function CreateReportPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Địa điểm tổ chức
+                    Location
                   </label>
                   <input
                     type="text"
                     value={act.location}
                     onChange={(e) => updateActivityField(act.id, 'location', e.target.value)}
-                    placeholder="VD: Hội trường Alpha, FPT University"
+                    placeholder="Example: Alpha Hall, FPT University"
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Đơn vị phối hợp
+                    Partner organization
                   </label>
                   <input
                     type="text"
                     value={act.partnerUnit}
                     onChange={(e) => updateActivityField(act.id, 'partnerUnit', e.target.value)}
-                    placeholder="VD: Doanh nghiệp FPT Software / Khoa CNTT"
+                    placeholder="Example: FPT Software / Information Technology Department"
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Số người dự kiến / Thực tế <span className="text-rose-500">*</span>
+                    {isFutureEvent ? 'Expected participants' : 'Expected / Actual participants'} <span className="text-rose-500">*</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={`grid gap-2 ${isFutureEvent ? 'grid-cols-1' : 'grid-cols-2'}`}>
                     <input
                       type="number"
                       value={act.targetParticipantCount}
                       onChange={(e) => updateActivityField(act.id, 'targetParticipantCount', Math.max(0, parseInt(e.target.value) || 0))}
-                      placeholder="Dự kiến"
+                      placeholder="Expected"
                       className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                     />
-                    <input
+                    {!isFutureEvent && <input
                       type="number"
                       value={act.participantCount}
                       onChange={(e) => updateActivityField(act.id, 'participantCount', Math.max(0, parseInt(e.target.value) || 0))}
-                      placeholder="Thực tế"
+                      placeholder="Actual"
                       className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
-                    />
+                    />}
                   </div>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Nội dung / Mô tả hoạt động <span className="text-rose-500">*</span>
+                    Activity details / Description <span className="text-rose-500">*</span>
                   </label>
                   <textarea
                     rows={2}
                     value={act.description}
                     onChange={(e) => updateActivityField(act.id, 'description', e.target.value)}
-                    placeholder="Chi tiết về diễn biến hoạt động..."
+                    placeholder={isFutureEvent ? 'Describe the planned event and how it will be organized...' : 'Describe how the activity was conducted...'}
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Kết quả đạt được <span className="text-rose-500">*</span>
+                    {isFutureEvent ? 'Expected outcome' : 'Outcome'} <span className="text-rose-500">*</span>
                   </label>
                   <textarea
                     rows={2}
                     value={act.outcome}
                     onChange={(e) => updateActivityField(act.id, 'outcome', e.target.value)}
-                    placeholder="VD: 85% sinh viên nắm vững kiến thức, 10 dự án được trao giải..."
+                    placeholder={isFutureEvent ? 'Describe the expected result of this event...' : 'Example: 85% of students mastered the material and 10 projects received awards...'}
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
-                <div>
+                {!isFutureEvent && <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Chi phí thực tế (VNĐ)
+                    Actual cost (VND)
                   </label>
                   <input
                     type="number"
@@ -706,11 +743,11 @@ export default function CreateReportPage() {
                     placeholder="0"
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
-                </div>
+                </div>}
 
-                <div>
+                {!isFutureEvent && <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Link minh chứng (Ảnh/Drive URL)
+                    Evidence link (Image/Drive URL)
                   </label>
                   <input
                     type="url"
@@ -719,7 +756,7 @@ export default function CreateReportPage() {
                     placeholder="https://drive.google.com/..."
                     className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
                   />
-                </div>
+                </div>}
               </div>
             </div>
           ))}
@@ -729,13 +766,13 @@ export default function CreateReportPage() {
               onClick={handlePrevStep}
               className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
             >
-              &larr; Quay lại
+              &larr; Back
             </button>
             <button
               onClick={handleNextStep}
               className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-lg hover:bg-cyan-400 transition-all text-xs"
             >
-              Tiếp tục: BƯỚC 3 (Tổng kết) &rarr;
+              Continue: STEP 3 (Summary) &rarr;
             </button>
           </div>
         </motion.div>
@@ -745,68 +782,68 @@ export default function CreateReportPage() {
       {step === 3 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-xl space-y-6">
-            <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 3: TỔNG KẾT VÀ KẾ HOẠCH</h2>
+            <h2 className="text-lg font-bold font-orbitron text-cyan-400">STEP 3: SUMMARY AND PLAN</h2>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Tóm tắt hoạt động trong kỳ <span className="text-rose-500">*</span>
+                Activity summary for the period <span className="text-rose-500">*</span>
               </label>
               <textarea
                 rows={3}
                 value={executiveSummary}
                 onChange={(e) => setExecutiveSummary(e.target.value)}
-                placeholder="Nêu tóm tắt chung các điểm nhấn chính của CLB trong kỳ vừa qua..."
+                placeholder="Summarize the club's main highlights during this period..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Thành tựu nổi bật <span className="text-rose-500">*</span>
+                Key achievements <span className="text-rose-500">*</span>
               </label>
               <textarea
                 rows={3}
                 value={achievements}
                 onChange={(e) => setAchievements(e.target.value)}
-                placeholder="Liệt kê các giải thưởng, chứng nhận hoặc kết quả xuất sắc đạt được..."
+                placeholder="List awards, certifications, or outstanding results..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Khó khăn & Tồn tại
+                Challenges and outstanding issues
               </label>
               <textarea
                 rows={3}
                 value={challenges}
                 onChange={(e) => setChallenges(e.target.value)}
-                placeholder="Các vướng mắc về địa điểm, kinh phí, nhân sự..."
+                placeholder="Describe issues involving venues, funding, staffing, or other resources..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Kiến nghị & Đề xuất hỗ trợ
+                Recommendations and support requests
               </label>
               <textarea
                 rows={3}
                 value={recommendations}
                 onChange={(e) => setRecommendations(e.target.value)}
-                placeholder="Đề xuất hỗ trợ từ Nhà trường, Phòng CTSV..."
+                placeholder="Request support from the university or Student Affairs Office..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Kế hoạch kỳ tiếp theo
+                Next-period plan
               </label>
               <textarea
                 rows={3}
                 value={nextPeriodPlan}
                 onChange={(e) => setNextPeriodPlan(e.target.value)}
-                placeholder="Định hướng và các sự kiện dự kiến tổ chức trong kỳ tới..."
+                placeholder="Outline goals and events planned for the next period..."
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-cyan-500 focus:outline-none"
               />
             </div>
@@ -816,13 +853,13 @@ export default function CreateReportPage() {
                 onClick={handlePrevStep}
                 className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
               >
-                &larr; Quay lại
+                &larr; Back
               </button>
               <button
                 onClick={handleNextStep}
                 className="px-5 py-2.5 bg-cyan-500 text-slate-950 font-bold rounded-lg hover:bg-cyan-400 transition-all text-xs"
               >
-                Tiếp tục: BƯỚC 4 (Preview) &rarr;
+                Continue: STEP 4 (Preview) &rarr;
               </button>
             </div>
           </div>
@@ -833,43 +870,43 @@ export default function CreateReportPage() {
       {step === 4 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
           <div className="p-6 bg-slate-900/80 border border-cyan-500/30 rounded-xl space-y-6">
-            <h2 className="text-lg font-bold font-orbitron text-cyan-400">BƯỚC 4: XEM TRƯỚC VÀ NỘP BÁO CÁO</h2>
+            <h2 className="text-lg font-bold font-orbitron text-cyan-400">STEP 4: PREVIEW AND SUBMIT REPORT</h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/60 rounded-xl border border-slate-800">
               <div>
-                <p className="text-xs text-slate-400">Kỳ báo cáo</p>
+                <p className="text-xs text-slate-400">Reporting period</p>
                 <p className="font-semibold text-cyan-400">{period}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Loại báo cáo</p>
+                <p className="text-xs text-slate-400">Report type</p>
                 <p className="font-semibold text-slate-200">{reportType}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Hạn nộp</p>
+                <p className="text-xs text-slate-400">Deadline</p>
                 <p className="font-semibold text-amber-400 font-mono">{currentDueDate}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Số hoạt động</p>
-                <p className="font-semibold text-emerald-400">{totals.totalActivities} hoạt động</p>
+                <p className="text-xs text-slate-400">Activities</p>
+                <p className="font-semibold text-emerald-400">{totals.totalActivities} activities</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Tóm tắt hoạt động</h4>
+                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Activity summary</h4>
                 <p className="text-slate-300 text-sm mt-1 bg-slate-950 p-3 rounded border border-slate-800 whitespace-pre-wrap">
                   {executiveSummary}
                 </p>
               </div>
               <div>
-                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Thành tựu nổi bật</h4>
+                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Key achievements</h4>
                 <p className="text-slate-300 text-sm mt-1 bg-slate-950 p-3 rounded border border-slate-800 whitespace-pre-wrap">
                   {achievements}
                 </p>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider mb-2">Danh sách hoạt động ({activities.length})</h4>
+                <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider mb-2">Activity list ({activities.length})</h4>
                 <div className="space-y-3">
                   {activities.map((act, idx) => (
                     <div key={act.id} className="p-3 bg-slate-950 rounded border border-slate-800 text-xs space-y-1">
@@ -879,8 +916,8 @@ export default function CreateReportPage() {
                       </div>
                       <p className="text-slate-400">{act.description}</p>
                       <div className="flex gap-4 text-slate-400 pt-1">
-                        <span>Tham gia: <strong className="text-emerald-400">{act.participantCount} người</strong></span>
-                        <span>Chi phí: <strong className="text-amber-400">{act.budgetSpent.toLocaleString('vi-VN')} VNĐ</strong></span>
+                        <span>{isFutureEvent ? 'Expected participants' : 'Participants'}: <strong className="text-emerald-400">{isFutureEvent ? act.targetParticipantCount : act.participantCount} people</strong></span>
+                        {!isFutureEvent && <span>Cost: <strong className="text-amber-400">{act.budgetSpent.toLocaleString('en-US')} VND</strong></span>}
                       </div>
                     </div>
                   ))}
@@ -888,13 +925,15 @@ export default function CreateReportPage() {
               </div>
             </div>
 
+            {isFutureEvent && <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-sm text-purple-100">Submitting this report sends a budget request notification to the club treasurer. The club owner will review the combined package after the treasurer completes it.</div>}
+
             <div className="flex justify-between pt-6 border-t border-slate-800">
               <button
                 onClick={handlePrevStep}
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
               >
-                &larr; Quay lại sửa
+                &larr; Back to edit
               </button>
               <div className="flex gap-3">
                 <button
@@ -902,14 +941,14 @@ export default function CreateReportPage() {
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold rounded-lg border border-cyan-500/30 text-xs"
                 >
-                  {isSubmitting ? 'Đang lưu...' : 'Lưu bản nháp'}
+                  {isSubmitting ? 'Saving...' : 'Save draft'}
                 </button>
                 <button
                   onClick={handleSubmitReport}
                   disabled={isSubmitting}
                   className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg shadow-lg shadow-cyan-500/20 text-xs"
                 >
-                  {isSubmitting ? 'Đang gửi...' : 'Nộp báo cáo ngay'}
+                  {isSubmitting ? 'Submitting...' : 'Submit report now'}
                 </button>
               </div>
             </div>
