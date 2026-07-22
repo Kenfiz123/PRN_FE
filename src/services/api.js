@@ -213,11 +213,17 @@ class ApiService {
 
   // Club endpoints
   async getClubs() {
-    return this.request('/api/clubs');
+    return this.request('/api/clubs?active=true');
   }
 
   async getClub(id) {
     return this.request(`/api/clubs/${id}`);
+  }
+
+  async deleteClub(id) {
+    return this.request(`/api/clubs/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async getMyMemberships() {
@@ -298,6 +304,29 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ note }),
     });
+  }
+
+  async getClubMembers(clubId, params = {}) {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+    ).toString();
+    return this.request(`/api/clubs/${clubId}/members${query ? `?${query}` : ''}`);
+  }
+
+  async getClubMember(clubId, memberId, params = { historyPage: 1, historyPageSize: 20 }) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/clubs/${clubId}/members/${memberId}?${query}`);
+  }
+
+  async assignClubTreasurer(clubId, memberUserId, memberName) {
+    return this.request(`/api/clubs/${clubId}/treasurers`, {
+      method: 'POST',
+      body: JSON.stringify({ memberUserId, memberName }),
+    });
+  }
+
+  async deleteClubMember(clubId, memberId) {
+    return this.request(`/api/clubs/${clubId}/members/${memberId}`, { method: 'DELETE' });
   }
 
   // Report endpoints
@@ -481,6 +510,22 @@ class ApiService {
     });
   }
 
+  async updateActivity(activityId, data) {
+    return this.request(`/api/activities/${activityId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async checkInActivity(activityId) {
+    return this.request(`/api/activities/${activityId}/check-in`, { method: 'POST' });
+  }
+
+  async getMyActivityAttendance(activityId, params = { page: 1, pageSize: 20 }) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/activities/${activityId}/my-attendance?${query}`);
+  }
+
   async registerParticipant(activityId, userId, fullName) {
     return this.request(`/api/activities/${activityId}/participants`, {
       method: 'POST',
@@ -491,6 +536,25 @@ class ApiService {
   async completeActivity(activityId) {
     return this.request(`/api/activities/${activityId}/complete`, {
       method: 'PATCH',
+    });
+  }
+
+  async getActivityAttendance(clubId, activityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/clubs/${clubId}/activities/${activityId}/attendance?${query}`);
+  }
+
+  async updateActivityAttendance(clubId, activityId, memberId, data) {
+    return this.request(`/api/clubs/${clubId}/activities/${activityId}/attendance/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async bulkUpdateActivityAttendance(clubId, activityId, items) {
+    return this.request(`/api/clubs/${clubId}/activities/${activityId}/attendance`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
     });
   }
 
@@ -511,6 +575,20 @@ class ApiService {
     return this.request(`/api/finance/proposals/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify({ approvedAmount, note }),
+    });
+  }
+
+  async managerApproveBudget(id, note) {
+    return this.request(`/api/finance/proposals/${id}/manager-approve`, {
+      method: 'POST',
+      body: JSON.stringify({ approvedAmount: null, note }),
+    });
+  }
+
+  async managerRejectBudget(id, note) {
+    return this.request(`/api/finance/proposals/${id}/manager-reject`, {
+      method: 'POST',
+      body: JSON.stringify({ approvedAmount: null, note }),
     });
   }
 

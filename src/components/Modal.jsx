@@ -89,18 +89,18 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className={`w-full ${sizeClasses[size]} bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden focus:outline-none`}
+              className={`flex max-h-[calc(100vh-2rem)] w-full flex-col ${sizeClasses[size]} overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-2xl focus:outline-none`}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-                <h3 id={titleId} className="text-lg font-semibold text-slate-100 font-orbitron">
+              <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
+                <h3 id={titleId} className="font-orbitron text-lg font-semibold text-neutral-900">
                   {title}
                 </h3>
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Đóng hộp thoại"
-                  className="text-slate-400 hover:text-slate-200 transition-colors"
+                  aria-label="Close dialog"
+                  className="text-neutral-400 transition-colors hover:text-neutral-700"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -109,7 +109,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
               </div>
 
               {/* Body */}
-              <div className="p-6">{children}</div>
+              <div className="min-h-0 flex-1 overflow-y-auto bg-white p-6">{children}</div>
             </motion.div>
           </div>
         </>

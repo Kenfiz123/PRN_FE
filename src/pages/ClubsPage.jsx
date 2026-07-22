@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
@@ -291,6 +292,7 @@ export default function ClubsPage() {
   const canJoinClub = hasPermission(PERMISSIONS.JOIN_CLUB)
   const canApplyForClub = hasPermission(PERMISSIONS.APPLY_FOR_CLUB)
   const canReviewApplications = hasPermission(PERMISSIONS.REVIEW_CLUB_APPLICATIONS)
+  const canDeleteClubs = hasPermission(PERMISSIONS.MANAGE_CLUB_GOVERNANCE)
   const managedClubIds = useMemo(
     () => new Set(clubAccess.filter(access => access.isManager).map(access => access.clubId)),
     [clubAccess],
@@ -304,6 +306,7 @@ export default function ClubsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [clubToDelete, setClubToDelete] = useState(null)
 
   const [selectedClub, setSelectedClub] = useState(null)
   const [joinForm, setJoinForm] = useState(() => createJoinForm(user))
@@ -453,6 +456,24 @@ export default function ClubsPage() {
     setMembershipReview(membership)
     setMembershipReviewAction(action)
     setMembershipReviewNote('')
+  }
+
+  const deleteClub = async () => {
+    if (!clubToDelete || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      await api.deleteClub(clubToDelete.id)
+      setClubs(current => current.filter(club => club.id !== clubToDelete.id))
+      setMemberships(current => current.filter(item => item.clubId !== clubToDelete.id))
+      setPendingMemberReviews(current => current.filter(item => item.clubId !== clubToDelete.id))
+      success(`${clubToDelete.name} has been deleted.`)
+      setClubToDelete(null)
+      await refreshClubAccess?.()
+    } catch (err) {
+      error(err.message || 'Unable to delete this club.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const openCreationForm = application => {
@@ -790,8 +811,24 @@ export default function ClubsPage() {
                   )}
                 </div>
                 <div className="border-t border-slate-800 bg-black/20 p-4">
-                  {isManaged ? (
-                    <p className="text-center text-sm font-semibold text-purple-300">You manage this club</p>
+                  {canDeleteClubs || isManaged ? (
+                    <div className="grid gap-2">
+                      <Link
+                        to={`/clubs/${club.id}/members`}
+                        className="w-full rounded-xl bg-cyan-500/15 px-4 py-3 text-center font-semibold text-cyan-300 transition hover:bg-cyan-500/25"
+                      >
+                        Manage members
+                      </Link>
+                      {canDeleteClubs && (
+                        <button
+                          type="button"
+                          onClick={() => setClubToDelete(club)}
+                          className="w-full rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 font-semibold text-rose-300 transition hover:bg-rose-500/20"
+                        >
+                          Delete club
+                        </button>
+                      )}
+                    </div>
                   ) : status === 'APPROVED' ? (
                     <p className="text-center text-sm font-semibold text-emerald-300">Membership is active</p>
                   ) : status === 'PENDING' ? (
@@ -859,7 +896,7 @@ export default function ClubsPage() {
               <Field label="Additional message"><TextArea value={joinForm.message} onChange={value => updateJoinField('message', value)} /></Field>
             </div>
           </section>
-          <div className="flex gap-3 border-t border-neutral-200 pt-4">
+          <div className="sticky -bottom-6 z-10 -mx-6 flex gap-3 border-t border-neutral-200 bg-white px-6 py-4 shadow-[0_-12px_24px_rgba(15,23,42,0.08)]">
             <button type="button" onClick={closeJoinForm} disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
             <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Submitting...' : 'Submit application'}</button>
           </div>
@@ -978,7 +1015,7 @@ export default function ClubsPage() {
             <Checkbox checked={clubForm.committedToResponsibility} onChange={value => updateClubForm('committedToResponsibility', value)} required>Accept responsibility before the administration</Checkbox>
             <Checkbox checked={clubForm.committedToReporting} onChange={value => updateClubForm('committedToReporting', value)} required>Submit periodic activity reports</Checkbox>
           </section>
-          <div className="flex gap-3 border-t border-neutral-200 pt-4">
+          <div className="sticky -bottom-6 z-10 -mx-6 flex gap-3 border-t border-neutral-200 bg-white px-6 py-4 shadow-[0_-12px_24px_rgba(15,23,42,0.08)]">
             <button type="button" onClick={() => setCreationModalOpen(false)} disabled={isSubmitting} className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700">Cancel</button>
             <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Submitting...' : editingApplication ? 'Resubmit application' : 'Submit creation application'}</button>
           </div>
@@ -1092,6 +1129,40 @@ export default function ClubsPage() {
             <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Processing...' : 'Confirm decision'}</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(clubToDelete)}
+        onClose={() => !isSubmitting && setClubToDelete(null)}
+        title="Delete Club"
+        size="md"
+      >
+        <div className="space-y-5">
+          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+            <p className="font-semibold">Delete {clubToDelete?.name}?</p>
+            <p className="mt-2">
+              The club will be deactivated and removed from the active club list. Active manager assignments will also end.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setClubToDelete(null)}
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg bg-neutral-100 px-4 py-3 font-semibold text-neutral-700 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={deleteClub}
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg bg-rose-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
+            >
+              {isSubmitting ? 'Deleting...' : 'Delete club'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

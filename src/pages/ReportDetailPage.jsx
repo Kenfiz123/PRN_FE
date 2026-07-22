@@ -38,7 +38,7 @@ function DetailBlock({ title, children, emptyText }) {
 export default function ReportDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { clubAccess, hasRole } = useAuth()
+  const { clubAccess, hasRole, user } = useAuth()
   const { success, error } = useToast()
   const [report, setReport] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -53,8 +53,6 @@ export default function ReportDetailPage() {
   // Replace File modal state
   const [replaceModalOpen, setReplaceModalOpen] = useState(false)
   const [replaceFile, setReplaceFile] = useState(null)
-  const [replaceError, setReplaceError] = useState('')
-  const replaceInputRef = useRef(null)
 
   const isClubManager = Boolean(report && clubAccess.some((access) => access.clubId === report.clubId && access.isManager))
   const canExport = isClubManager || hasRole('ADMIN') || hasRole('STUDENT_AFFAIRS_ADMIN')
@@ -62,7 +60,10 @@ export default function ReportDetailPage() {
   const canEdit = isClubManager && ['DRAFT', 'REJECTED'].includes(status)
   const canSubmit = isClubManager && ['DRAFT', 'REJECTED'].includes(status)
   const isReviewer = hasRole('ADMIN') || hasRole('STUDENT_AFFAIRS_ADMIN') || hasRole('SYSTEM_ADMIN')
-  const canReview = isReviewer && status === 'UNDERREVIEW'
+  
+  const isFutureEvent = report?.reportType === 'FUTURE_EVENT' || report?.tag === 'FUTURE_EVENT'
+  const canManagerReview = isClubManager && isFutureEvent && status === 'TREASURERAPPROVED'
+  const canReview = (isReviewer && status === 'UNDERREVIEW') || (isReviewer && isFutureEvent && status === 'TREASURERAPPROVED') || canManagerReview
 
   const isUploadedReport = report?.contentSource === 'UPLOADED_FILE' || Boolean(report?.uploadedFile)
 

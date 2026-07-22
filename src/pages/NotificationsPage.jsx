@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import Modal from '../components/Modal'
 import { useNotifications } from '../context/NotificationContext'
 import { useToast } from '../context/ToastContext'
 
@@ -10,7 +12,26 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
+function getRelatedPath(eventType = '') {
+  if (eventType.startsWith('activity.')) return '/activities'
+  if (eventType.startsWith('report.') || eventType.startsWith('export.')) return '/reports'
+  if (eventType.startsWith('club.')) return '/clubs'
+  if (eventType.startsWith('budget.') || eventType.startsWith('settlement.')) return '/finance'
+  if (eventType.startsWith('user.')) return '/profile'
+  return null
+}
+
+function formatRecipient(notification) {
+  if (notification?.recipientUserId) return 'Personal notification'
+  if (notification?.recipientRole) {
+    const role = notification.recipientRole.toLowerCase().replaceAll('_', ' ')
+    return `Role: ${role}`
+  }
+  return 'System notification'
+}
+
 export default function NotificationsPage() {
+  const navigate = useNavigate()
   const { success, error } = useToast()
   const {
     notifications,
@@ -22,6 +43,7 @@ export default function NotificationsPage() {
   } = useNotifications()
   const [filter, setFilter] = useState('all')
   const [busyId, setBusyId] = useState(null)
+  const [selectedId, setSelectedId] = useState(null)
 
   useEffect(() => {
     if (loadError) {
@@ -34,6 +56,10 @@ export default function NotificationsPage() {
     if (filter === 'read') return notification.isRead
     return true
   }), [filter, notifications])
+  const selectedNotification = useMemo(
+    () => notifications.find(notification => notification.id === selectedId) || null,
+    [notifications, selectedId],
+  )
 
   const markRead = async (notification) => {
     if (notification.isRead || busyId) return
@@ -59,6 +85,13 @@ export default function NotificationsPage() {
       setBusyId(null)
     }
   }
+
+  const openDetails = (notification) => {
+    setSelectedId(notification.id)
+    if (!notification.isRead) markRead(notification)
+  }
+
+  const relatedPath = getRelatedPath(selectedNotification?.eventType)
 
   return (
     <div className="space-y-6">
@@ -115,7 +148,7 @@ export default function NotificationsPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.025 }}
-              onClick={() => markRead(notification)}
+              onClick={() => openDetails(notification)}
               disabled={busyId === notification.id}
               className={`w-full rounded-2xl border p-4 text-left transition sm:p-5 ${
                 notification.isRead
@@ -142,6 +175,80 @@ export default function NotificationsPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        isOpen={Boolean(selectedNotification)}
+        onClose={() => setSelectedId(null)}
+        title="Notification Details"
+        size="md"
+      >
+        {selectedNotification && (
+          <div className="space-y-5 text-neutral-700">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-700">
+                  {selectedNotification.eventType}
+                </span>
+                <h4 className="mt-3 text-xl font-bold text-neutral-900">{selectedNotification.title}</h4>
+              </div>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                selectedNotification.isRead
+                  ? 'bg-neutral-100 text-neutral-600'
+                  : 'bg-amber-100 text-amber-700'
+              }`}>
+                {selectedNotification.isRead ? 'Read' : 'Unread'}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+              <p className="whitespace-pre-wrap text-sm leading-7 text-neutral-700">
+                {selectedNotification.message}
+              </p>
+            </div>
+
+            <dl className="grid gap-4 rounded-xl border border-neutral-200 p-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Received</dt>
+                <dd className="mt-1 text-sm font-medium text-neutral-800">{formatDate(selectedNotification.createdAtUtc)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Recipient</dt>
+                <dd className="mt-1 text-sm font-medium capitalize text-neutral-800">{formatRecipient(selectedNotification)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Notification ID</dt>
+                <dd className="mt-1 text-sm font-medium text-neutral-800">#{selectedNotification.id}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Event type</dt>
+                <dd className="mt-1 text-sm font-medium text-neutral-800">{selectedNotification.eventType}</dd>
+              </div>
+            </dl>
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedId(null)}
+                className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Close
+              </button>
+              {relatedPath && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedId(null)
+                    navigate(relatedPath)
+                  }}
+                  className="rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500"
+                >
+                  Open related page
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

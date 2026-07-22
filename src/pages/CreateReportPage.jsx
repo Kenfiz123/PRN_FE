@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FileUp, FileText, Upload, Trash2, RefreshCw, AlertCircle, CheckCircle2, ArrowRight, Save } from 'lucide-react'
+import { FileUp, FileText, Upload, Trash2, RefreshCw, AlertCircle, CheckCircle2, Save, Calendar, CheckCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import api from '../services/api'
@@ -12,6 +12,7 @@ const REPORT_TYPES = [
   { value: 'SEMESTER', label: 'Báo cáo học kỳ (Semester)' },
   { value: 'ANNUAL', label: 'Báo cáo năm (Annual)' },
   { value: 'AD_HOC', label: 'Báo cáo đột xuất (Ad-hoc)' },
+  { value: 'FUTURE_EVENT', label: 'Báo cáo sự kiện sắp tới (Future Event)' },
 ]
 
 const DEFAULT_PERIODS = [
@@ -89,6 +90,8 @@ export default function CreateReportPage() {
   const [uploadError, setUploadError] = useState('')
   const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef(null)
+
+  const isFutureEvent = reportType === 'FUTURE_EVENT'
 
   const userManagedClubs = useMemo(() => {
     return clubAccess.filter((access) => access.isManager)
@@ -177,6 +180,13 @@ export default function CreateReportPage() {
     return matched?.dueDate || matched?.DueDate || 'Chưa quy định'
   }, [deadlines, period])
 
+  const totals = useMemo(() => {
+    const totalActivities = activities.length
+    const totalParticipants = activities.reduce((acc, curr) => acc + (Number(curr.participantCount) || 0), 0)
+    const totalBudget = activities.reduce((acc, curr) => acc + (Number(curr.budgetSpent) || 0), 0)
+    return { totalActivities, totalParticipants, totalBudget }
+  }, [activities])
+
   const validateFile = (file) => {
     if (!file) {
       return 'Vui lòng chọn tệp báo cáo.'
@@ -256,8 +266,7 @@ export default function CreateReportPage() {
     }
   }
 
-  const handleFormSubmit = async (e) => {
-    e?.preventDefault()
+  const saveReport = async (submitAfterSave = false) => {
     if (!clubId) {
       error('Vui lòng chọn câu lạc bộ.')
       return
@@ -296,15 +305,22 @@ export default function CreateReportPage() {
         })),
       }
 
+      let targetId = id
       if (isEditMode) {
         await api.updateReport(id, payload)
         success('Đã cập nhật báo cáo thành công!')
-        navigate(`/reports/${id}`)
       } else {
         const created = await api.createReport(payload)
+        targetId = created.id
         success('Đã tạo dự thảo báo cáo thành công!')
-        navigate(`/reports/${created.id}`)
       }
+
+      if (submitAfterSave && targetId) {
+        await api.submitReport(targetId)
+        success(isFutureEvent ? 'Đã gửi báo cáo sự kiện kết hợp cho thủ quỹ!' : 'Đã nộp báo cáo để xét duyệt!')
+      }
+
+      navigate(targetId ? `/reports/${targetId}` : '/reports')
     } catch (err) {
       error(err.message || 'Không thể lưu báo cáo.')
     } finally {
@@ -598,184 +614,370 @@ export default function CreateReportPage() {
 
       {/* METHOD 1: STRUCTURED FORM WORKFLOW */}
       {creationMode === 'FORM' && (
-        <form onSubmit={handleFormSubmit} className="space-y-6">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-              <FileText size={20} className="text-cyan-400" /> Thông tin chung báo cáo
-            </h2>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Câu lạc bộ <span className="text-rose-400">*</span>
-                </label>
-                <select
-                  value={clubId}
-                  onChange={(e) => setClubId(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
-                >
-                  {managedClubs.map((club) => (
-                    <option key={club.id} value={club.id}>
-                      {club.name} ({club.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Kỳ báo cáo <span className="text-rose-400">*</span>
-                </label>
-                <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
-                >
-                  {deadlines.map((d) => (
-                    <option key={d.period} value={d.period}>
-                      {d.label || d.period}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Loại báo cáo
-                </label>
-                <select
-                  value={reportType}
-                  onChange={(e) => setReportType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
-                >
-                  {REPORT_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Hạn nộp (từ hệ thống)
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={currentDueDate}
-                  className="w-full rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-sm text-amber-300 font-semibold cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">Tóm tắt điều hành</label>
-              <textarea
-                rows={3}
-                value={executiveSummary}
-                onChange={(e) => setExecutiveSummary(e.target.value)}
-                placeholder="Tóm tắt tổng quan về tình hình hoạt động của CLB trong kỳ..."
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Activities list in form mode */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-100">Danh sách hoạt động ({activities.length})</h2>
+        <div className="space-y-6">
+          {/* Step Indicator */}
+          <div className="grid grid-cols-4 gap-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+            {[1, 2, 3, 4].map((s) => (
               <button
-                type="button"
-                onClick={() => setActivities([...activities, {
-                  id: generateUniqueId(),
-                  dbId: null,
-                  activityName: '',
-                  activityType: 'Chuyên môn',
-                  activityDate: new Date().toISOString().split('T')[0],
-                  location: '',
-                  partnerUnit: '',
-                  objective: '',
-                  description: '',
-                  targetParticipantCount: 50,
-                  participantCount: 0,
-                  outcome: '',
-                  budgetSpent: 0,
-                  evidenceUrl: '',
-                }])}
-                className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-700"
+                key={s}
+                onClick={() => setStep(s)}
+                className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  step === s
+                    ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                    : step > s
+                    ? 'bg-slate-800 text-cyan-400'
+                    : 'text-slate-500 hover:bg-slate-800/50'
+                }`}
               >
-                + Thêm hoạt động
+                {s === 1 && '1. GENERAL INFO'}
+                {s === 2 && `2. ACTIVITIES (${activities.length})`}
+                {s === 3 && '3. EVALUATION'}
+                {s === 4 && '4. PREVIEW'}
               </button>
-            </div>
-
-            {activities.map((act, idx) => (
-              <div key={act.id} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                  <span className="text-xs font-bold text-cyan-400">HOẠT ĐỘNG #{idx + 1}</span>
-                  {activities.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setActivities(activities.filter((a) => a.id !== act.id))}
-                      className="text-xs text-rose-400 hover:underline"
-                    >
-                      Xóa hoạt động
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">Tên hoạt động *</label>
-                    <input
-                      type="text"
-                      value={act.activityName}
-                      onChange={(e) => {
-                        const next = [...activities]
-                        next[idx].activityName = e.target.value
-                        setActivities(next)
-                      }}
-                      placeholder="Nhập tên hoạt động..."
-                      className="w-full rounded-md border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-300">Ngày tổ chức</label>
-                    <input
-                      type="date"
-                      value={act.activityDate}
-                      onChange={(e) => {
-                        const next = [...activities]
-                        next[idx].activityDate = e.target.value
-                        setActivities(next)
-                      }}
-                      className="w-full rounded-md border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
             ))}
           </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/reports')}
-              className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
-            >
-              <Save size={18} /> {isSubmitting ? 'Đang lưu...' : 'Lưu dự thảo'}
-            </button>
-          </div>
-        </form>
+          {/* STEP 1 */}
+          {step === 1 && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
+              <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                <FileText size={20} className="text-cyan-400" /> STEP 1: GENERAL INFORMATION
+              </h2>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Câu lạc bộ <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    value={clubId}
+                    onChange={(e) => setClubId(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  >
+                    {managedClubs.map((club) => (
+                      <option key={club.id} value={club.id}>
+                        {club.name} ({club.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Kỳ báo cáo <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    value={period}
+                    onChange={(e) => setPeriod(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  >
+                    {deadlines.map((d) => (
+                      <option key={d.period} value={d.period}>
+                        {d.label || d.period}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Loại báo cáo
+                  </label>
+                  <select
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  >
+                    {REPORT_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Hạn nộp (từ hệ thống)
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={currentDueDate}
+                    className="w-full rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-sm text-amber-300 font-semibold cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              {isFutureEvent && (
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-sm text-purple-200">
+                  <strong>Báo cáo sự kiện sắp tới:</strong> Nộp báo cáo này sẽ tự động tạo thông báo đề xuất ngân sách gửi đến thủ quỹ CLB. Chủ nhiệm CLB sẽ gửi gói hồ sơ kết hợp sau khi thủ quỹ hoàn tất phần ngân sách.
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Tóm tắt điều hành</label>
+                <textarea
+                  rows={3}
+                  value={executiveSummary}
+                  onChange={(e) => setExecutiveSummary(e.target.value)}
+                  placeholder="Tóm tắt tổng quan về tình hình hoạt động của CLB trong kỳ..."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="px-5 py-2.5 bg-cyan-400 text-slate-950 font-bold rounded-lg hover:bg-cyan-300 transition-all text-xs"
+                >
+                  Tiếp theo: BƯỚC 2 (Hoạt động) &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-100">STEP 2: DANH SÁCH HOẠT ĐỘNG ({activities.length})</h2>
+                <button
+                  type="button"
+                  onClick={() => setActivities([...activities, {
+                    id: generateUniqueId(),
+                    dbId: null,
+                    activityName: '',
+                    activityType: 'Chuyên môn',
+                    activityDate: new Date().toISOString().split('T')[0],
+                    location: '',
+                    partnerUnit: '',
+                    objective: '',
+                    description: '',
+                    targetParticipantCount: 50,
+                    participantCount: 0,
+                    outcome: '',
+                    budgetSpent: 0,
+                    evidenceUrl: '',
+                  }])}
+                  className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-slate-700"
+                >
+                  + Thêm hoạt động
+                </button>
+              </div>
+
+              {activities.map((act, idx) => (
+                <div key={act.id} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                    <span className="text-xs font-bold text-cyan-400">HOẠT ĐỘNG #{idx + 1}</span>
+                    {activities.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setActivities(activities.filter((a) => a.id !== act.id))}
+                        className="text-xs text-rose-400 hover:underline"
+                      >
+                        Xóa hoạt động
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-300">Tên hoạt động *</label>
+                      <input
+                        type="text"
+                        value={act.activityName}
+                        onChange={(e) => {
+                          const next = [...activities]
+                          next[idx].activityName = e.target.value
+                          setActivities(next)
+                        }}
+                        placeholder="Nhập tên hoạt động..."
+                        className="w-full rounded-md border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-300">Ngày tổ chức</label>
+                      <input
+                        type="date"
+                        value={act.activityDate}
+                        onChange={(e) => {
+                          const next = [...activities]
+                          next[idx].activityDate = e.target.value
+                          setActivities(next)
+                        }}
+                        className="w-full rounded-md border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex justify-between pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
+                >
+                  &larr; Quay lại
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="px-5 py-2.5 bg-cyan-400 text-slate-950 font-bold rounded-lg hover:bg-cyan-300 transition-all text-xs"
+                >
+                  Tiếp theo: BƯỚC 3 (Đánh giá) &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
+              <h2 className="text-lg font-semibold text-slate-100">STEP 3: ĐÁNH GIÁ VÀ KẾ HOẠCH</h2>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Thành tựu nổi bật</label>
+                <textarea
+                  rows={3}
+                  value={achievements}
+                  onChange={(e) => setAchievements(e.target.value)}
+                  placeholder="Ghi nhận thành tựu, giải thưởng hoặc kết quả xuất sắc..."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Khó khăn & tồn tại</label>
+                <textarea
+                  rows={3}
+                  value={challenges}
+                  onChange={(e) => setChallenges(e.target.value)}
+                  placeholder="Mô tả khó khăn về địa điểm, tài chính, nhân sự..."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Kiến nghị hỗ trợ</label>
+                <textarea
+                  rows={3}
+                  value={recommendations}
+                  onChange={(e) => setRecommendations(e.target.value)}
+                  placeholder="Đề xuất hỗ trợ từ nhà trường hoặc Phòng Công tác Sinh viên..."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Kế hoạch kỳ tiếp theo</label>
+                <textarea
+                  rows={3}
+                  value={nextPeriodPlan}
+                  onChange={(e) => setNextPeriodPlan(e.target.value)}
+                  placeholder="Nêu mục tiêu và sự kiện dự kiến trong kỳ tới..."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-between pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
+                >
+                  &larr; Quay lại
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(4)}
+                  className="px-5 py-2.5 bg-cyan-400 text-slate-950 font-bold rounded-lg hover:bg-cyan-300 transition-all text-xs"
+                >
+                  Tiếp theo: BƯỚC 4 (Xem trước & Nộp) &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4 */}
+          {step === 4 && (
+            <div className="rounded-xl border border-cyan-500/30 bg-slate-900/80 p-6 space-y-6">
+              <h2 className="text-lg font-bold font-orbitron text-cyan-400">STEP 4: XEM TRƯỚC VÀ NỘP BÁO CÁO</h2>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-900/60 rounded-xl border border-slate-800">
+                <div>
+                  <p className="text-xs text-slate-400">Kỳ báo cáo</p>
+                  <p className="font-semibold text-cyan-400">{period}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Loại báo cáo</p>
+                  <p className="font-semibold text-slate-200">{reportType}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Hạn nộp</p>
+                  <p className="font-semibold text-amber-400 font-mono">{currentDueDate}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Số hoạt động</p>
+                  <p className="font-semibold text-emerald-400">{totals.totalActivities} hoạt động</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Tóm tắt điều hành</h4>
+                  <p className="text-slate-300 text-sm mt-1 bg-slate-950 p-3 rounded border border-slate-800 whitespace-pre-wrap">
+                    {executiveSummary || 'Chưa có tóm tắt.'}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold uppercase text-cyan-400 tracking-wider">Thành tựu nổi bật</h4>
+                  <p className="text-slate-300 text-sm mt-1 bg-slate-950 p-3 rounded border border-slate-800 whitespace-pre-wrap">
+                    {achievements || 'Chưa có thông tin.'}
+                  </p>
+                </div>
+              </div>
+
+              {isFutureEvent && (
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-sm text-purple-200">
+                  Nộp báo cáo này sẽ gửi thông báo yêu cầu kinh phí tới thủ quỹ CLB. Chủ nhiệm CLB sẽ duyệt gói hồ sơ kết hợp sau khi thủ quỹ hoàn thành.
+                </div>
+              )}
+
+              <div className="flex justify-between pt-6 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 font-semibold rounded-lg hover:bg-slate-700 text-xs"
+                >
+                  &larr; Quay lại chỉnh sửa
+                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => saveReport(false)}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold rounded-lg border border-cyan-500/30 text-xs"
+                  >
+                    {isSubmitting ? 'Đang lưu...' : 'Lưu dự thảo'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => saveReport(true)}
+                    disabled={isSubmitting}
+                    className="px-5 py-2 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-lg shadow-lg shadow-cyan-500/20 text-xs"
+                  >
+                    {isSubmitting ? 'Đang nộp...' : 'Nộp báo cáo ngay'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download, FileDown, RefreshCw } from 'lucide-react'
 import Modal from '../Modal'
-import { api } from '../../services/api'
+import api from '../../services/api'
 import { useToast } from '../../context/ToastContext'
 
 export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
@@ -57,7 +57,7 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
   const handleDownload = async (id, fileName) => {
     try {
       await api.downloadExport(id, fileName)
-      success('Đang tải tệp xuống...')
+      success('Đang tải tệp báo cáo xuống...')
     } catch (err) {
       error(err.message || 'Tệp xuất không còn tồn tại hoặc không khả dụng.')
     }
@@ -68,6 +68,7 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
       <div className="flex flex-col space-y-4">
         <div className="flex justify-end">
           <button
+            type="button"
             onClick={() => loadExports(false)}
             disabled={isLoading}
             className="flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-700 disabled:opacity-50"
@@ -78,13 +79,11 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
         </div>
 
         {isLoading && exports.length === 0 ? (
-          <div className="flex min-h-[200px] items-center justify-center">
-            <div className="cyber-spinner" />
-          </div>
+          <div className="flex min-h-[200px] items-center justify-center"><div className="cyber-spinner" /></div>
         ) : exports.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 py-12 text-center text-slate-500">
             <FileDown size={32} className="mb-3 text-slate-600" />
-            <p>Chưa có yêu cầu xuất file nào.</p>
+            <p>Chưa có yêu cầu xuất báo cáo nào.</p>
           </div>
         ) : (
           <div className="max-h-[60vh] overflow-y-auto pr-2">
@@ -94,8 +93,8 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
 
                 return (
                   <div key={item.id} className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 p-4 transition hover:bg-slate-800/50">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-slate-200">
+                    <div className="flex flex-col min-w-0 pr-4">
+                      <span className="font-semibold text-slate-200 truncate">
                         Export #{item.id} - {item.exportType}
                       </span>
                       <span className="mt-1 text-xs text-slate-400">
@@ -117,17 +116,20 @@ export default function ExportHistoryModal({ isOpen, onClose, reportId }) {
                       </div>
                     </div>
 
-                    {canDownload ? (
-                      <button
-                        onClick={() => handleDownload(item.id, item.file?.fileName)}
-                        className="inline-flex h-9 items-center justify-center rounded-lg bg-cyan-500/10 px-3 text-sm font-semibold text-cyan-400 transition hover:bg-cyan-500/20"
-                      >
-                        <Download size={16} className="mr-2" />
-                        Tải xuống
-                      </button>
-                    ) : item.status === 'Completed' ? (
-                      <span className="text-xs text-slate-500 italic">File không khả dụng</span>
-                    ) : null}
+                    <div className="shrink-0">
+                      {canDownload ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDownload(item.id, item.file?.fileName)}
+                          className="inline-flex h-9 items-center justify-center rounded-lg bg-cyan-500/10 px-3 text-sm font-semibold text-cyan-400 transition hover:bg-cyan-500/20"
+                        >
+                          <Download size={16} className="mr-2" />
+                          Tải xuống
+                        </button>
+                      ) : item.status === 'Completed' ? (
+                        <span className="text-xs text-slate-500 italic">File không khả dụng</span>
+                      ) : null}
+                    </div>
                   </div>
                 )
               })}
