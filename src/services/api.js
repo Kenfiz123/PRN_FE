@@ -392,6 +392,22 @@ class ApiService {
     });
   }
 
+  async updateActivity(activityId, data) {
+    return this.request(`/api/activities/${activityId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async checkInActivity(activityId) {
+    return this.request(`/api/activities/${activityId}/check-in`, { method: 'POST' });
+  }
+
+  async getMyActivityAttendance(activityId, params = { page: 1, pageSize: 20 }) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/api/activities/${activityId}/my-attendance?${query}`);
+  }
+
   async registerParticipant(activityId, userId, fullName) {
     return this.request(`/api/activities/${activityId}/participants`, {
       method: 'POST',
