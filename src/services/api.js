@@ -469,6 +469,31 @@ class ApiService {
     });
   }
 
+  async downloadExport(id, fileName) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/api/exports/${id}/download`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to download file');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || `export-${id}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
   // Notifications
   async getNotifications(unreadOnly = false) {
     const query = unreadOnly ? '?unreadOnly=true' : '';
