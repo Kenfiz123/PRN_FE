@@ -10,6 +10,7 @@ const SEARCH_DESTINATIONS = [
   { label: 'Tổng quan', path: '/dashboard', permission: PERMISSIONS.VIEW_DASHBOARD, keywords: 'dashboard tổng quan trang chủ' },
   { label: 'Câu lạc bộ', path: '/clubs', permission: PERMISSIONS.VIEW_CLUBS, keywords: 'club thành viên đơn đăng ký' },
   { label: 'Báo cáo', path: '/reports', permission: PERMISSIONS.VIEW_REPORTS, keywords: 'report chỉ số hạn nộp' },
+  { label: 'KPI', path: '/kpi', permission: PERMISSIONS.VIEW_KPI, keywords: 'kpi score performance ranking rating' },
   { label: 'Hoạt động', path: '/activities', permission: PERMISSIONS.VIEW_ACTIVITIES, keywords: 'activity sự kiện lịch' },
   { label: 'Tài chính', path: '/finance', permission: PERMISSIONS.VIEW_FINANCE, keywords: 'budget quyết toán' },
   { label: 'Thông báo', path: '/notifications', permission: PERMISSIONS.VIEW_NOTIFICATIONS, keywords: 'alert chưa đọc' },

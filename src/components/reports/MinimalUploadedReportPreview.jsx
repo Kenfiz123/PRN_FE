@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Download, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Download, RefreshCw, Send } from 'lucide-react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 
@@ -12,6 +12,9 @@ export default function MinimalUploadedReportPreview({
   onBack,
   onDownloadOriginal,
   fetchPreview,
+  canSubmit = false,
+  isSubmitting = false,
+  onSubmit,
 }) {
   const containerRef = useRef(null)
 
@@ -135,15 +138,28 @@ export default function MinimalUploadedReportPreview({
           </span>
         )}
 
-        {onDownloadOriginal && (
-          <button
-            type="button"
-            onClick={onDownloadOriginal}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md bg-cyan-400 text-xs font-bold text-slate-950 transition hover:bg-cyan-300"
-          >
-            <Download size={14} /> Tải file gốc
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {onDownloadOriginal && (
+            <button
+              type="button"
+              onClick={onDownloadOriginal}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 text-xs font-semibold text-slate-100 transition hover:border-slate-600 hover:bg-slate-700"
+            >
+              <Download size={14} /> <span className="hidden sm:inline">Tải file gốc</span>
+            </button>
+          )}
+
+          {canSubmit && onSubmit && (
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={onSubmit}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-cyan-400 px-3.5 text-xs font-bold text-slate-950 shadow-[0_0_18px_rgba(34,211,238,0.2)] transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Send size={14} /> {isSubmitting ? 'Đang nộp...' : 'Nộp báo cáo'}
+            </button>
+          )}
+        </div>
       </header>
 
       {/* MAIN DOCUMENT VIEWER */}

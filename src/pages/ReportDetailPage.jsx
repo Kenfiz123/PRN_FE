@@ -46,7 +46,7 @@ function formatBytes(bytes, decimals = 2) {
 export default function ReportDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { clubAccess, hasRole } = useAuth()
+  const { user, clubAccess, hasRole } = useAuth()
   const { success, error } = useToast()
 
   const [report, setReport] = useState(null)
@@ -66,8 +66,12 @@ export default function ReportDetailPage() {
   )
   const canExport = isClubManager || hasRole('ADMIN') || hasRole('STUDENT_AFFAIRS_ADMIN')
   const status = normalizeReportStatus(report?.status)
+  const isReportAuthor = Number(report?.createdByUserId) === Number(user?.id)
+  const isUploadedReport = report?.contentSource === 'UPLOADED_FILE' || Boolean(report?.uploadedFile)
   const canEdit = isClubManager && ['DRAFT', 'REJECTED'].includes(status)
-  const canSubmit = isClubManager && ['DRAFT', 'REJECTED'].includes(status)
+  const canSubmit = isReportAuthor
+    && (isClubManager || isUploadedReport)
+    && ['DRAFT', 'REJECTED'].includes(status)
   const isReviewer = hasRole('ADMIN') || hasRole('STUDENT_AFFAIRS_ADMIN') || hasRole('SYSTEM_ADMIN')
 
   const isFutureEvent = report?.reportType === 'FUTURE_EVENT' || report?.tag === 'FUTURE_EVENT'
@@ -76,8 +80,6 @@ export default function ReportDetailPage() {
     (isReviewer && status === 'UNDERREVIEW') ||
     (isReviewer && isFutureEvent && status === 'TREASURERAPPROVED') ||
     canManagerReview
-
-  const isUploadedReport = report?.contentSource === 'UPLOADED_FILE' || Boolean(report?.uploadedFile)
 
   // Stable callback for fetching preview — avoids effect reloading on parent re-renders
   const fetchPreview = useCallback(
@@ -209,6 +211,9 @@ export default function ReportDetailPage() {
         onBack={() => navigate('/reports')}
         onDownloadOriginal={handleDownloadUploadedFile}
         fetchPreview={fetchPreview}
+        canSubmit={canSubmit}
+        isSubmitting={isSubmitting}
+        onSubmit={handleManualSubmit}
       />
     )
   }
@@ -604,10 +609,10 @@ export default function ReportDetailPage() {
       >
         <div className="space-y-4">
           <div
-            className={`flex gap-3 rounded-lg border p-3 text-sm ${
+            className={`flex gap-3 rounded-xl border p-4 text-sm leading-6 ${
               reviewAction === 'approve'
-                ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100'
-                : 'border-rose-400/25 bg-rose-400/10 text-rose-100'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                : 'border-rose-200 bg-rose-50 text-rose-900'
             }`}
           >
             <CircleAlert size={18} className="mt-0.5 shrink-0" />
@@ -618,8 +623,8 @@ export default function ReportDetailPage() {
             </p>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-200">
-              Nhận xét {reviewAction === 'reject' && <span className="text-rose-300">*</span>}
+            <label className="mb-2 block text-sm font-semibold text-slate-800">
+              Nhận xét {reviewAction === 'reject' && <span className="text-rose-600">*</span>}
             </label>
             <textarea
               rows={5}
@@ -630,24 +635,31 @@ export default function ReportDetailPage() {
                   ? 'Nhận xét tích cực hoặc lưu ý thêm (không bắt buộc)'
                   : 'Nội dung cần chỉnh sửa'
               }
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-base text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+              maxLength={1000}
+              className="min-h-36 w-full resize-y rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-base leading-6 text-slate-900 shadow-inner outline-none placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
             />
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+              <span>Nhận xét sẽ được lưu trong lịch sử phản hồi.</span>
+              <span>{feedbackNote.length}/1000</span>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="-mx-6 -mb-6 flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:flex-row sm:justify-end">
             <button
+              type="button"
               disabled={isSubmitting}
               onClick={() => setReviewModalOpen(false)}
-              className="min-h-10 rounded-lg px-3.5 text-sm font-semibold text-slate-300 hover:bg-slate-800"
+              className="min-h-11 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Hủy
             </button>
             <button
+              type="button"
               disabled={isSubmitting}
               onClick={handleReviewSubmit}
-              className={`min-h-10 rounded-lg px-4 text-sm font-bold disabled:opacity-60 ${
+              className={`min-h-11 rounded-lg px-5 text-sm font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 reviewAction === 'approve'
-                  ? 'bg-emerald-400 text-slate-950 hover:bg-emerald-300'
-                  : 'bg-rose-400 text-slate-950 hover:bg-rose-300'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200'
+                  : 'bg-rose-600 hover:bg-rose-700 focus:ring-4 focus:ring-rose-200'
               }`}
             >
               {isSubmitting

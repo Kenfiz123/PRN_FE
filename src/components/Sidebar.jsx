@@ -37,6 +37,16 @@ const navItems = [
     )
   },
   {
+    path: '/kpi',
+    name: 'KPI',
+    permission: PERMISSIONS.VIEW_KPI,
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13.5l4.5-4.5 4 4L20 4.5M16 4.5h4v4M5 20h14" />
+      </svg>
+    )
+  },
+  {
     path: '/activities',
     name: 'Hoạt động',
     permission: PERMISSIONS.VIEW_ACTIVITIES,

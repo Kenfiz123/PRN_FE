@@ -13,6 +13,7 @@ import ActivityAttendancePage from './pages/ActivityAttendancePage'
 import ReportsPage from './pages/ReportsPage'
 import CreateReportPage from './pages/CreateReportPage'
 import ReportDetailPage from './pages/ReportDetailPage'
+import KpiPage from './pages/KpiPage'
 import ActivitiesPage from './pages/ActivitiesPage'
 import FinancePage from './pages/FinancePage'
 import NotificationsPage from './pages/NotificationsPage'
@@ -158,6 +159,14 @@ export default function App() {
         element={
           <LayoutRoute title="Chỉnh sửa báo cáo" permission={PERMISSIONS.AUTHOR_REPORTS}>
             <CreateReportPage />
+          </LayoutRoute>
+        }
+      />
+      <Route
+        path="/kpi"
+        element={
+          <LayoutRoute title="KPI" permission={PERMISSIONS.VIEW_KPI}>
+            <KpiPage />
           </LayoutRoute>
         }
       />

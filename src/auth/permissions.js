@@ -30,6 +30,7 @@ export const PERMISSIONS = Object.freeze({
   APPLY_FOR_CLUB: 'APPLY_FOR_CLUB',
   JOIN_CLUB: 'JOIN_CLUB',
   VIEW_REPORTS: 'VIEW_REPORTS',
+  VIEW_KPI: 'VIEW_KPI',
   AUTHOR_REPORTS: 'AUTHOR_REPORTS',
   REVIEW_REPORTS: 'REVIEW_REPORTS',
   VIEW_ACTIVITIES: 'VIEW_ACTIVITIES',
@@ -50,6 +51,7 @@ const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.REVIEW_CLUB_APPLICATIONS,
     PERMISSIONS.MANAGE_CLUB_GOVERNANCE,
     PERMISSIONS.VIEW_REPORTS,
+    PERMISSIONS.VIEW_KPI,
     PERMISSIONS.REVIEW_REPORTS,
     PERMISSIONS.VIEW_ACTIVITIES,
     PERMISSIONS.VIEW_FINANCE,
@@ -70,6 +72,7 @@ const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.REVIEW_CLUB_APPLICATIONS,
     PERMISSIONS.MANAGE_CLUB_GOVERNANCE,
     PERMISSIONS.VIEW_REPORTS,
+    PERMISSIONS.VIEW_KPI,
     PERMISSIONS.REVIEW_REPORTS,
     PERMISSIONS.VIEW_ACTIVITIES,
     PERMISSIONS.VIEW_FINANCE,
@@ -119,6 +122,12 @@ export function hasPermission(user, clubAccess = [], permission) {
 
   if (permission === PERMISSIONS.AUTHOR_REPORTS) {
     return clubAccess.some(access => access.isManager || access.isTreasurer)
+  }
+
+  if (permission === PERMISSIONS.VIEW_KPI) {
+    return clubAccess.some(access =>
+      access.isApprovedMember || access.isManager || access.isTreasurer,
+    )
   }
 
   if (permission === PERMISSIONS.MANAGE_ACTIVITIES) {
